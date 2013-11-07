@@ -1,11 +1,18 @@
-# Make vim the default editor
-export EDITOR="vim"
-# Don’t clear the screen after quitting a manual page
-export MANPAGER="less -X"
+# Make nano the default editor
+export EDITOR="nano"
+
+export MANPAGER="cat"
 
 # Larger bash history (allow 32³ entries; default is 500)
 export HISTSIZE=32768
 export HISTFILESIZE=$HISTSIZE
 export HISTCONTROL=ignoredups
+
 # Make some commands not show up in history
-export HISTIGNORE="ls:ls *:cd:cd -:pwd;exit:date:* --help"
+export HISTIGNORE="&:[ ]*:ls:ls *:cd:cd -:pwd;exit:date:* --help"
+
+# JsTestDriver preffix
+export JSTESTDRIVER_HOME=~/bin/java
+
+# Python path
+export PYTHONPATH=/usr/local/lib/python2.6/site-packages/
