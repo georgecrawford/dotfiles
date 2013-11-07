@@ -10,11 +10,16 @@ fi
 if tput setaf 1 &> /dev/null; then
 	tput sgr0
 	if [[ $(tput colors) -ge 256 ]] 2>/dev/null; then
-		MAGENTA=$(tput setaf 9)
-		ORANGE=$(tput setaf 172)
-		GREEN=$(tput setaf 190)
-		PURPLE=$(tput setaf 141)
-		WHITE=$(tput setaf 256)
+		BLACK=$(tput setaf 0)
+		RED=$(tput setaf 1)
+		GREEN=$(tput setaf 2)
+		YELLOW=$(tput setaf 3)
+		LIME_YELLOW=$(tput setaf 190)
+		POWDER_BLUE=$(tput setaf 153)
+		BLUE=$(tput setaf 4)
+		MAGENTA=$(tput setaf 5)
+		CYAN=$(tput setaf 6)
+		WHITE=$(tput setaf 7)
 	else
 		MAGENTA=$(tput setaf 5)
 		ORANGE=$(tput setaf 4)
@@ -22,6 +27,10 @@ if tput setaf 1 &> /dev/null; then
 		PURPLE=$(tput setaf 1)
 		WHITE=$(tput setaf 7)
 	fi
+	BRIGHT=$(tput bold)
+	BLINK=$(tput blink)
+	REVERSE=$(tput smso)
+	UNDERLINE=$(tput smul)
 	BOLD=$(tput bold)
 	RESET=$(tput sgr0)
 else
@@ -36,7 +45,7 @@ fi
 
 
 function parse_git_dirty() {
-	[[ $(git status 2> /dev/null | tail -n1) != "nothing to commit (working directory clean)" ]] && echo "*"
+	[[ $(git status 2> /dev/null | tail -n1) != "nothing to commit, working directory clean" ]] && echo "*"
 }
 
 function parse_git_branch() {
@@ -54,4 +63,4 @@ function parse_git_branch() {
 # in the iterm tab
 # \[\e]1;\]$(basename $(dirname $PWD))/\W\[\a\]
 
-PS1="\[\e]2;$PWD\[\a\]\[\e]1;\]$(basename "$(dirname "$PWD")")/\W\[\a\]\[${BOLD}${MAGENTA}\]\u \[$WHITE\]at \[$ORANGE\]\h \[$WHITE\]in \[$GREEN\]\w\[$WHITE\]\$([[ -n \$(git branch 2> /dev/null) ]] && echo \" on \")\[$PURPLE\]\$(parse_git_branch)\[$WHITE\]\n\$ \[$RESET\]"
+PS1="\[${BOLD}${RED}\]\u \[$WHITE\]at \[$GREEN\]\h \[$WHITE\]in \[$POWDER_BLUE\]\w\[$WHITE\]\$([[ -n \$(git branch 2> /dev/null) ]] && echo \" on \")\[$LIME_YELLOW\]\$(parse_git_branch)\[$WHITE\]\n\$ \[$RESET\]"
