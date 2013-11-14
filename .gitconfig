@@ -1,18 +1,34 @@
-[alias]
-	c = commit -am
-	up = pull
-	p = push
-	s = status -s
-	df = diff --color --color-words --abbrev
-	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --
-[color]
-	ui = always
-[apply]
-	whitespace = fix
+[user]
+	name = George Crawford
+	email = george.crawford@ft.com
+	# email = g.o.crawford@gmail.com
 [core]
+	editor = nano
+	pager = cat
 	excludesfile = ~/.gitignore
 	attributesfile = ~/.gitattributes
-	whitespace = fix,space-before-tab,tab-in-indent,trailing-space
+	whitespace = fix,space-before-tab,blank-at-eol,tabwidth=4
+[alias]
+	br = branch
+	c = commit -am
+	ci = commit
+	co = checkout
+	d = difftool
+	df = diff --color --color-words --abbrev
+	di = diff --color-words
+	hist = log --pretty=tformat:'%x09%C(blue)%h %C(red)%ad%C(reset)%C(red) (%ar) %C(yellow)%an%C(reset): %s%C(green)%d%n' --date=short --graph --date-order --max-count=100
+	l10 = log --pretty=tformat:'%x09%C(blue)%h %C(red)%ad%C(reset)%C(red) (%ar) %C(yellow)%an%C(reset): %s%C(green)%d%n' --date=short --graph --date-order --max-count=10
+	l20 = log --pretty=tformat:'%x09%C(blue)%h %C(red)%ad%C(reset)%C(red) (%ar) %C(yellow)%an%C(reset): %s%C(green)%d%n' --date=short --graph --date-order --max-count=20
+	p = push
+	s = status
+	up = pull
+[mergetool]
+	keepBackup = true
+[push]
+	default = tracking
+[color]
+	ui = auto
+	diff = always
 [color "branch"]
 	current = yellow reverse
 	local = yellow
@@ -26,22 +42,25 @@
 	added = yellow
 	changed = green
 	untracked = cyan
+[diff]
+	tool = "bbdiff"
+	renames = copies
+[difftool]
+	prompt = NO
+[difftool "bbdiff"]
+	cmd = bbdiff --wait --resume --ignore-trailing-spaces "$LOCAL" "$REMOTE"
 [merge]
+	tool = bbdiff
 	log = true
-[url "git@github.com:"]
-	insteadOf = "gh:"
-	pushInsteadOf = "github:"
-	pushInsteadOf = "git://github.com/"
-[url "git://github.com/"]
-	insteadOf = "github:"
-[url "git@gist.github.com:"]
-	insteadOf = "gst:"
-	pushInsteadOf = "gist:"
-	pushInsteadOf = "git://gist.github.com/"
-[url "git://gist.github.com/"]
-	insteadOf = "gist:"
-
-# Any GitHub repo with my username should be checked out r/w by default
-# http://rentzsch.tumblr.com/post/564806957/public-but-hackable-git-submodules
-[url "git@github.com:addyosmani/"]
-  insteadOf = "git://github.com/addyosmani/"
+	stat = true
+[mergetool]
+	prompt = no
+	keepBackup = false
+[mergetool "bbdiff"]
+	cmd = bbdiff --wait --resume "$LOCAL" "$REMOTE"
+[alias]
+	bbmerge = mergetool
+[init]
+	templatedir = ~/ftlabs/Git/templates/
+[apply]
+	whitespace = fix

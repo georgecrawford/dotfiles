@@ -1,0 +1,99 @@
+#!/bin/bash
+
+# user@hostname or alias from .ssh/config
+# you must use ssh key for authentication
+SSHLOGIN=shell.ak.ft.com
+
+#destination
+LOCAL_DIR=`pwd`
+SHELL_DIR=~/Shell/
+
+if ! $(echo "$LOCAL_DIR" | grep "$SHELL_DIR" > /dev/null); then
+    echo "Must be run from a subdirectory of $SHELL_DIR, not $LOCAL_DIR"
+    exit 1
+fi
+
+if ! $(echo "$LOCAL_DIR" | grep "/Users/george/Shell/econhtml5" > /dev/null); then
+    echo "Directory is $LOCAL_DIR - are you sure you want to do this?"
+    exit 1
+fi
+
+LOCAL_PATH="${LOCAL_DIR/$SHELL_DIR/}"
+
+# quote here, variable will be evaluate on remote
+REMOTE_DIR='$HOME/sandboxes/'$LOCAL_PATH
+
+PORT=$(($RANDOM%63000+2001))
+
+MODULE=sync${UID}module$RANDOM
+
+# dir/*** excludes the directory and all subdirs, so git/bzr repos are separate for local and remote
+# no quotes around * are necessary
+RSYNCFLAGS="--port=$PORT -raz --keep-dirlinks --inplace --update --exclude-from $HOME/ftlabs/rsync-exclude"
+
+CONF="""
+lock file = \$HOME/fswatch-rsyncd.lock
+log file = \$HOME/fswatch-rsyncd.log
+pid file = \$HOME/fswatch-rsyncd.pid
+
+[$MODULE]
+    path = $REMOTE_DIR
+    comment = Sandboxes
+    read only = no
+    list = yes
+    use chroot = no
+    munge symlinks = no
+    ignore nonreadable = yes
+    uid = 11826
+    secrets file = \$HOME/fswatch-rsyncd.secret
+"""
+
+
+# uploads config, echo replaces $HOME on remote
+ssh "$SSHLOGIN" 'echo "'"$CONF"'" > fswatch-rsyncd.conf'
+
+# Run rsync daemon (in foreground of background ssh) on remote and tunnel it to localhost
+{
+trap 'echo Killing SSH $(jobs -p); kill $(jobs -p)' EXIT
+while true; do
+ssh "$SSHLOGIN" -L $PORT:localhost:$PORT '
+    test -f fswatch-rsyncd.pid && { kill `cat fswatch-rsyncd.pid`; rm fswatch-rsyncd.pid; }
+    rsync -v --daemon --address=127.0.0.1 --port='$PORT' --no-detach --config=fswatch-rsyncd.conf
+' &
+wait
+echo "ARRRGH, SERVER DIED (will reconnect)"; sleep 1;
+done
+} &
+
+# Ensure server is killed when script exits
+trap 'echo Killing server script $(jobs -p); kill $(jobs -p)' EXIT
+
+# Initial sync from server to client
+while ! nc -z localhost $PORT; do
+    echo "Waiting for rsync daemon to start on port localhost:$PORT"
+    sleep 1;
+done
+
+sleep 1;
+test -d "$LOCAL_DIR" || mkdir "$LOCAL_DIR"
+
+echo "Downloading"
+rsync -P $RSYNCFLAGS "rsync://rsyncclient@localhost/$MODULE/" "${LOCAL_DIR%/}"/ || {
+    echo "Failed to sync data down";
+    exit 1;
+}
+
+echo "Uploading"
+rsync $RSYNCFLAGS "${LOCAL_DIR%/}"/ "rsync://rsyncclient@localhost/$MODULE/" || {
+    echo "Failed to sync data up";
+    exit 1;
+}
+
+# And that's where the real work is done
+echo "Now observing changes in $LOCAL_DIR"
+`dirname "$0"`/fswatch "$LOCAL_DIR" 'printf "Changes in %s..." "$FSWATCH_CHANGED_RELPATH"; rsync '"$RSYNCFLAGS"' --delete-after --filter="+ ${FSWATCH_CHANGED_RELPATH}***" "--filter=+ */" "--filter=- *" "$FSWATCH_ROOT_PATH" rsync://rsyncclient@localhost/'"$MODULE"'/ && echo "uploaded"'
+
+# Experiment to sync the root dir instead of the changed dir - but this is missing a coalesce routine so there's only one fswatch event to deal with
+# `dirname "$0"`/fswatch "$LOCAL_DIR" 'rootdir=${FSWATCH_CHANGED_RELPATH#/}; rootdir=$( echo $rootdir | cut -d/ -f1 ); printf "Changes in %s...syncing root directory %s..." "$FSWATCH_CHANGED_RELPATH" "$rootdir"; rsync '"$RSYNCFLAGS"' --filter="+ ${rootdir}***" "--filter=+ */" "--filter=- *" "$FSWATCH_ROOT_PATH" rsync://rsyncclient@localhost/'"$MODULE"'/ && echo "uploaded"'
+
+

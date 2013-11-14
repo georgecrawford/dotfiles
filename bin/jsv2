@@ -1,0 +1,7 @@
+#!/bin/bash
+if [ -z $1 ]
+then
+    	git diff --name-only | egrep '^.*?\.(js|json)$' | xargs jsv2
+else
+    	jshint --show-non-errors --extra-ext .json --config="$HOME/ftlabs/jsv2.json" $@
+fi
