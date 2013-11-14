@@ -30,6 +30,7 @@ function ip() {
 	echo
 }
 
+
 # A better git clone
 # clones a repository, cds into it, and opens it in my editor.
 #

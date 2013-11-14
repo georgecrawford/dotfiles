@@ -48,7 +48,6 @@ pid file = \$HOME/fswatch-rsyncd.pid
     secrets file = \$HOME/fswatch-rsyncd.secret
 """
 
-
 # uploads config, echo replaces $HOME on remote
 ssh "$SSHLOGIN" 'echo "'"$CONF"'" > fswatch-rsyncd.conf'
 
@@ -75,10 +74,12 @@ while ! nc -z localhost $PORT; do
 done
 
 sleep 1;
-test -d "$LOCAL_DIR" || mkdir "$LOCAL_DIR"
+#test -d "$LOCAL_DIR" || mkdir "$LOCAL_DIR"
 
 echo "Downloading"
-rsync -P $RSYNCFLAGS "rsync://rsyncclient@localhost/$MODULE/" "${LOCAL_DIR%/}"/ || {
+# rsync -P $RSYNCFLAGS "rsync://rsyncclient@localhost/$MODULE/" "${LOCAL_DIR%/}"/ || {
+# now that initial sync is done, -P is too verbose
+rsync --partial $RSYNCFLAGS "rsync://rsyncclient@localhost/$MODULE/" "${LOCAL_DIR%/}"/ || {
     echo "Failed to sync data down";
     exit 1;
 }
@@ -89,11 +90,7 @@ rsync $RSYNCFLAGS "${LOCAL_DIR%/}"/ "rsync://rsyncclient@localhost/$MODULE/" || 
     exit 1;
 }
 
-# And that's where the real work is done
-echo "Now observing changes in $LOCAL_DIR"
-`dirname "$0"`/fswatch "$LOCAL_DIR" 'printf "Changes in %s..." "$FSWATCH_CHANGED_RELPATH"; rsync '"$RSYNCFLAGS"' --delete-after --filter="+ ${FSWATCH_CHANGED_RELPATH}***" "--filter=+ */" "--filter=- *" "$FSWATCH_ROOT_PATH" rsync://rsyncclient@localhost/'"$MODULE"'/ && echo "uploaded"'
+fsevent.rb "$LOCAL_DIR" 'rsync '"$RSYNCFLAGS"' --delete-after %s--filter="+ */" '"$LOCAL_DIR"'/ rsync://rsyncclient@localhost/'"$MODULE"'/ && echo " ... uploaded"' '--filter="+ %s***" '
 
-# Experiment to sync the root dir instead of the changed dir - but this is missing a coalesce routine so there's only one fswatch event to deal with
-# `dirname "$0"`/fswatch "$LOCAL_DIR" 'rootdir=${FSWATCH_CHANGED_RELPATH#/}; rootdir=$( echo $rootdir | cut -d/ -f1 ); printf "Changes in %s...syncing root directory %s..." "$FSWATCH_CHANGED_RELPATH" "$rootdir"; rsync '"$RSYNCFLAGS"' --filter="+ ${rootdir}***" "--filter=+ */" "--filter=- *" "$FSWATCH_ROOT_PATH" rsync://rsyncclient@localhost/'"$MODULE"'/ && echo "uploaded"'
-
-
+# Working fswatch example
+# `dirname "$0"`/fswatch "$LOCAL_DIR" 'printf "Changes in %s..." "$FSWATCH_CHANGED_RELPATH"; echo -v '"$RSYNCFLAGS"' --delete-after --filter="+ ${FSWATCH_CHANGED_RELPATH}***" "--filter=+ */" "$FSWATCH_ROOT_PATH" rsync://rsyncclient@localhost/'"$MODULE"'/; rsync -v '"$RSYNCFLAGS"' --delete-after --filter="+ ${FSWATCH_CHANGED_RELPATH}***" "--filter=+ */" "$FSWATCH_ROOT_PATH" rsync://rsyncclient@localhost/'"$MODULE"'/ && echo "uploaded"'
