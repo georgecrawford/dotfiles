@@ -13,9 +13,9 @@
 	c = commit -am
 	ci = commit
 	co = checkout
-	d = difftool
+	d = diff --color-words
+	dt = difftool
 	df = diff --color --color-words --abbrev
-	di = diff --color-words
 	hist = log --pretty=tformat:'%x09%C(blue)%h %C(red)%ad%C(reset)%C(red) (%ar) %C(yellow)%an%C(reset): %s%C(green)%d%n' --date=short --graph --date-order --max-count=100
 	l10 = log --pretty=tformat:'%x09%C(blue)%h %C(red)%ad%C(reset)%C(red) (%ar) %C(yellow)%an%C(reset): %s%C(green)%d%n' --date=short --graph --date-order --max-count=10
 	l20 = log --pretty=tformat:'%x09%C(blue)%h %C(red)%ad%C(reset)%C(red) (%ar) %C(yellow)%an%C(reset): %s%C(green)%d%n' --date=short --graph --date-order --max-count=20
@@ -46,6 +46,7 @@
 	tool = "bbdiff"
 	renames = copies
 [difftool]
+	tool = "bbdiff"
 	prompt = NO
 [difftool "bbdiff"]
 	cmd = bbdiff --wait --resume --ignore-trailing-spaces "$LOCAL" "$REMOTE"
