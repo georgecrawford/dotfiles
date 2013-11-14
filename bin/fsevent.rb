@@ -32,7 +32,7 @@ pathobj = Pathname.new path
 fsevent = FSEvent.new
 fsevent.watch path, options do |directories|
 
-	repeatingblock = ''
+	subcommands  = []
 	changedpaths = []
 
 	directories.map{|directory|
@@ -40,12 +40,11 @@ fsevent.watch path, options do |directories|
 		directory = Pathname.new directory
 		relative = directory.relative_path_from pathobj
 		relative = relative.to_s + '/'
-
-		repeatingblock += sprintf(repeating, relative)
+		subcommands.push(sprintf(repeating, relative))
 		changedpaths.push << relative
 	}
 
-	fullcommand = sprintf(command, repeatingblock)
+	fullcommand = sprintf(command, subcommands.join(' '))
 	puts "\nChanged paths: [" + changedpaths.join(', ') + ']'
 
 	# Run the command
