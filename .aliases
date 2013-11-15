@@ -1,3 +1,5 @@
+alias dotfiles="cd ~/dotfiles"
+
 # Easier navigation: .., ..., ~ and -
 alias ..="cd .."
 alias ...="cd ../.."
