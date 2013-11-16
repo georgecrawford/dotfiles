@@ -28,7 +28,7 @@ alias photoshop="open -a '/Applications/Adobe Photoshop CS6/Adobe Photoshop.app'
 
 # general shortcuts
 alias sites="cd ~/Sites"
-alias gh="open -a google\ chrome 'http://github.com/georgeocrawford'"
+alias gh="open -a google\ chrome 'http://github.com/georgecrawford'"
 
 # Detect which `ls` flavor is in use
 if ls --color > /dev/null 2>&1; then # GNU `ls`

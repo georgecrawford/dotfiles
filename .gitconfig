@@ -4,7 +4,7 @@
 	# email = g.o.crawford@gmail.com
 [core]
 	editor = nano
-	pager = cat
+	# pager = cat
 	excludesfile = ~/.gitignore
 	attributesfile = ~/.gitattributes
 	whitespace = fix,space-before-tab,blank-at-eol,tabwidth=4
