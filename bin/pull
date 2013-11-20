@@ -1,0 +1,52 @@
+#!/bin/bash
+#
+# Usage: pull
+#
+# Pulls remote changes using rebase & tries to rebundle,
+# safely stashing and re-applying your local changes, if any
+#
+
+branch=$(git branch --no-color 2>/dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/') || exit $?
+default_remote="origin"
+remote=$(git config "branch.${branch}.remote" || echo "$default_remote")
+remote_branch=$( (git config "branch.${branch}.merge" || echo "refs/heads/$branch") | awk -F '/' '{ print $3 }' )
+
+# Stash any local changes
+stash=$(git stash)
+
+# Update our remote
+echo "Fetching from $remote ..."
+git fetch $remote || exit $?
+
+# Pull, using rebase if configured
+rebase="--rebase" # TODO disable if env-var is set
+git pull $rebase $remote $remote_branch || exit $?
+
+# Update submodules
+git submodule update || exit $?
+
+# Pop any stashed changes
+if [[ "$stash" =~ "No local changes to save" ]]; then
+  echo "* No stashed changes, not popping"
+else
+  echo "* Popping stash..."
+  git stash pop
+fi
+
+# Remove old, stale branches
+git remote prune $remote >/dev/null 2>&1 &
+
+# Bundle em if you got em!
+if which bundle >/dev/null 2>&1 && [ -f Gemfile ]; then
+  echo "* Bundling gems..."
+  bundle check >/dev/null 2>&1 || bundle install
+fi
+
+# Install node.js/npm packages
+if which npm >/dev/null 2>&1 && [ -f package.json ]; then
+  echo "* Installing npm packages..."
+  npm install
+fi
+
+echo "Done"
+exit 0
