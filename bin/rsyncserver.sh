@@ -59,8 +59,9 @@ ssh "$SSHLOGIN" -L $PORT:localhost:$PORT '
 	test -f fswatch-rsyncd.pid && { kill `cat fswatch-rsyncd.pid`; rm fswatch-rsyncd.pid; }
 	rsync -v --daemon --address=127.0.0.1 --port='$PORT' --no-detach --config=fswatch-rsyncd.conf
 ' &
+echo "connecting..."
 wait
-echo "ARRRGH, SERVER DIED (will reconnect)"; sleep 1;
+echo "ARRRGH, SERVER DIED"; sleep 1;
 done
 } &
 
