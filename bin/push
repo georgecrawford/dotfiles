@@ -35,7 +35,8 @@ fi
 # Parse relevant commit refs and let user know what we did
 # 1st-time push to new branch gets special treatment
 if echo $push | grep "\[new branch\]" >/dev/null; then
-  refs="master...$branch"
+  remotedefault=$(git branch -r | sed -n 's/origin\/HEAD.*origin\/\(.*\)$/\1/p' | tr -d ' ')
+  refs="$remotedefault...$branch"
   echo "Pushed new branch '$branch' remotely"
 else
   refs=$(echo $push | awk '{ print $3}' | sed 's/\.\./\.\.\./')
