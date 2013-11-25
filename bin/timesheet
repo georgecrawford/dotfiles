@@ -1,0 +1,25 @@
+#!/usr/bin/env php
+<?php
+
+date_default_timezone_set('Europe/London');
+
+$workDayStart = 9;
+$workDayEnd   = 20;
+
+$hour = (int) date('G');
+
+if ($hour < $workDayStart || $hour > $workDayEnd) {
+	echo "Not in work hours\n";
+	exit(0);
+}
+
+echo "Inside work hours\n";
+
+if (!preg_match('/10.118|9/', file_get_contents('/etc/resolv.conf'))) {
+	echo "Not in dev environment\n";
+	exit(0);
+}
+
+echo "Inside dev environment\n";
+
+exec('open -a /Applications/Timesheet.app');
