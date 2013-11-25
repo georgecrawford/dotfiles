@@ -19,8 +19,9 @@ fi
 # fi
 
 LOCAL_PATH="${LOCAL_DIR/$SHELL_DIR/}"
+LOCAL_PATH_HASH=$(md5 -qs $LOCAL_PATH)
 
-# quote here, variable will be evaluate on remote
+# quote here, variable will be evaluated on remote
 REMOTE_DIR='$HOME/'$LOCAL_PATH
 
 PORT=$(($RANDOM%63000+2001))
@@ -32,9 +33,9 @@ MODULE=sync${UID}module$RANDOM
 RSYNCFLAGS="--port=$PORT -razP --keep-dirlinks --inplace --update --exclude-from $HOME/ftlabs/rsync-exclude"
 
 CONF="""
-lock file = \$HOME/fswatch-rsyncd.lock
-log file = \$HOME/fswatch-rsyncd.log
-pid file = \$HOME/fswatch-rsyncd.pid
+lock file = \$HOME/fswatch-rsyncd.$LOCAL_PATH_HASH.lock
+log file = \$HOME/fswatch-rsyncd.$LOCAL_PATH_HASH.log
+pid file = \$HOME/fswatch-rsyncd.$LOCAL_PATH_HASH.pid
 
 [$MODULE]
 	path = $REMOTE_DIR
@@ -45,19 +46,19 @@ pid file = \$HOME/fswatch-rsyncd.pid
 	munge symlinks = no
 	ignore nonreadable = yes
 	uid = 11826
-	secrets file = \$HOME/fswatch-rsyncd.secret
+	secrets file = \$HOME/fswatch-rsyncd.$LOCAL_PATH_HASH.secret
 """
 
 # uploads config, echo replaces $HOME on remote
-ssh "$SSHLOGIN" 'echo "'"$CONF"'" > fswatch-rsyncd.conf'
+ssh "$SSHLOGIN" 'echo "'"$CONF"'" > fswatch-rsyncd."'"$LOCAL_PATH_HASH"'".conf'
 
 # Run rsync daemon (in foreground of background ssh) on remote and tunnel it to localhost
 {
 trap 'echo Killing SSH $(jobs -p); kill $(jobs -p)' EXIT
 while true; do
 ssh "$SSHLOGIN" -L $PORT:localhost:$PORT '
-	test -f fswatch-rsyncd.pid && { kill `cat fswatch-rsyncd.pid`; rm fswatch-rsyncd.pid; }
-	rsync -v --daemon --address=127.0.0.1 --port='$PORT' --no-detach --config=fswatch-rsyncd.conf
+	test -f fswatch-rsyncd.'$LOCAL_PATH_HASH'.pid && { kill `cat fswatch-rsyncd.'$LOCAL_PATH_HASH'.pid`; rm fswatch-rsyncd.'$LOCAL_PATH_HASH'.pid; }
+	rsync -v --daemon --address=127.0.0.1 --port='$PORT' --no-detach --config=fswatch-rsyncd.'$LOCAL_PATH_HASH'.conf
 ' &
 echo "connecting..."
 wait
