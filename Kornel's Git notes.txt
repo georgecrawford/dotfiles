@@ -1,0 +1,161 @@
+=== basic command syntax ===
+git cmd --opts branch -- files
+
+=== man pages ===
+man gitglossary
+man git-commit
+
+=== recommended Git client ===
+GitX
+
+
+== terminology ===
+repository = /.git directory
+working tree = real files & dirs
+checkout a branch, copies stuff from /.git to working tree
+commmit is a snapshot of the entire tree, not a set of diffs
+"committer" and "author" of a commit can be different
+"merge" is a commit with 2+ parents - connects the history
+working tree has a "staging area". Also called "index" or "cache" - same thing, just renamed
+	- it's a draft of the next commit
+	- adds changes from the working tree to the staging area
+	- "git add -p" stage only chunks of files
+	- "git reset" just unstages a tree or file, doesn't revert any changes in the files
+	- "git diff --staged"
+"branch" is a line of development, the commit referred to is the branch's "tip". There's nothing special about "master", it's just a convention
+"tag" is like a branch that never changes, points to a commit
+"HEAD" is an alias for the currently checked-out branch or commit
+"detached HEAD" is a HEAD without a branch, i.e. a checkout of a particular commit
+"ref" is a way of naming a commit - branch, tag, hash (full or short), HEAD, HEAD^ (commit previous to HEAD), and loads more at "man gitrevisions". use "git show" with these options to see the commit which matches
+"tree-ish" is anything which a ref can point to (hash, branch or tag)
+"git branch", "git branch -v"
+
+
+=== nice config options ===
+git config --global ...
+	color.ui auto
+	diff.renames copies		- searches deeper for where diff lines came from
+	push.default tracking
+	merge.stat true			- good info of what the impact is of pull or merge
+
+
+=== Branches ===
+$ git branch GEORGE; git checkout GEORGE; is equal to: $ git checkout -b GEORGE
+by default it checks out out from HEAD, but more common to branch from a version (locally or at origin)
+To checkout,
+"git stash" and "git stash pop", but you must run "git checkout -" to get back to the previous branch before you pop off ths stash - it doesn't remember which branch the stash came from
+
+=== Merges ===
+a merge commit is one way to pull changes from a feature branch into master
+	$ git checkout v99;
+	$ git merge Redmine1234;
+	$ git mergetool
+		if there are conflicts
+	$ git add [file]
+		mark the conflict as resolved
+	$ git merge --abort
+		revert to unmerged state
+
+if you merge from a commit which is already in your history, it doesn't do a new merge commit, but instead a "git fastforward", which just updates the master from the old commit to the current HEAD. Use '--nofastforward' to force a merge commit, which is what GitHub does when merging a pull request
+
+
+=== Reset ===
+$ git reset HEAD [or [file]] - unstage the file
+$ git reset [hash] - changes where the branch points to, without changing the working tree, so leaving the changes as (staged or unstaged - not sure)
+$ git reset --hard [hash] - equivalent of bzr revert
+$ git reset HEAD^; git commit; - reset to previous commit and commit again.
+	= $ git commit --amend
+
+
+=== Cherrypicking ===
+Taking the changes from one commit, and applying them into a separate branch
+$ git checkout A
+$ git cherry-pick C; or $ git cherry-pick C..E
+This will take the *diff* of the commit rather than the commit
+$ git cherry-pick --no-commit C; same, but doesn't commit straight away
+To get a specific file from a specific commit: $ git checkout C -- [file]
+
+
+=== Revert ===
+The opposite of a cherry-pick - apply the reverse of a diff, in order to reverse bad changes
+$ git revert [--no-commit] B
+
+
+=== Rebase ===
+Cherrypicking all commits from a branch to HEAD. Take a bugfix branch, and if there haven't been too many other commits to master, merge the bugfix changes into the master to keep a linear history. For more complex feature branches, or where master has changed a lot, do a merge so that it will show up on the graph.
+
+Checkout branch that will be moved, then rebase, pointing to the destination:
+$ git checkout C
+$ git rebase A - cherry-picks all the commits from C, back to the common ancestor with A, and applies them to A
+
+Because this is really just a series of cherry-picks, it may result in a conflict at any stage, so:
+$ git rebase --continue 	- after resolving conflict
+OR $ git rebase --skip 		- for a single commit
+OR $ git rebase --abort		- cancel rebase
+
+$ git rebase --interactive - usually with a commit in the same branch
+opens a text file with the list of commits which will be rebased. You can reorder them, and add keywords before lines - [pick], [edit], [fixup], [reword].
+
+Don't rebase if you have already pushed the branch:
+
+IF NOT PUSHED 			IF ALREADY PUSHED
+git commit --amend 		-> git commit
+git reset HEAD^ 		-> git revert
+git rebase 				-> git merge
+
+
+=== git reflog ===
+'Diary' of old commits, old branches, etc. back for 30 days
+
+
+=== Remotes ===
+remote = origin = upstream (with some pedantic differences)
+origin = the default remote
+
+Repos are all equal peers, it's entirely distributed.
+origin/master is the master branch on the origin repo, and is different to my master
+
+$ fetch						- synchronisation of information. Learn what else has occurred remotely
+$ clone 					- fetch a repo for the first time and initialise
+$ pull 						- runs fetch then merges remote tracked branches into the local counterparts (i.e. updates local copies)
+$ pull --rebase 			- fetch with a rebase rather than a merge
+$ push [origin] [branch]	- makes the remote side pull from you
+
+fetch and push are the ONLY commands which use the network
+
+
+Workflow
+========
+git checkout origin/v15
+git checkout -b redmine12345
+git push -u origin redmine12345 (1st time)
+git push (nth time)
+
+
+Workflow for keeping a secret, private, local bugfix branch up to date with the remote branch it was merged from:
+DON'T PUSH THE BUGFIX BRANCH INITIALLY
+$ git fetch;
+$ git rebase origin/v37
+Then push the bugfix branch and open a pull request
+
+
+=== Tracking ===
+configuration which links my branch to another server's branch
+$ git remote show origin
+$ git remove -v
+
+When you clone, tracking is set up. When you checkout from a remote origin, it's also set up.
+$ git push -u Redmine123 - pushes a branch to origin, and ensures the two are tracked in the future
+
+$ git remote add [name] [url]	- we won't use this, but allows multiple remotes
+
+
+=== Protocols ===
+local filesystem:	path to /.git
+SSH: 				user@server:project.git
+
+=== Useful ===
+$ git diff --color-words
+$ git diff --stat
+$ git log --stat
+
