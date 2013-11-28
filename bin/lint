@@ -1,0 +1,133 @@
+#!/bin/sh
+# @autolint
+
+# Hack to get GitX to find jsv2, node, jshint, etc.
+source ~/.extra
+
+function exitWithError()
+{
+	if [[ -t 2 ]]; then  # "2" is the STDERR descriptor
+		red=$(tput setaf 1)
+		bold=$(tput bold)
+		reset=$(tput sgr0)
+		echo "$red$bold$1$reset" 1>&2
+	else
+		echo "$1" 1>&2
+	fi
+
+	if [ -e $STAGEDFILE ]; then
+		rm $STAGEDFILE
+	fi
+	exit 1
+}
+
+function fixFilenameReferences()
+{
+	echo "$1" | sed -e "s#$STAGEDFILE#$FILE#"
+	# echo "$1" | sed "s/$(echo "$STAGEDFILE" | sed -e 's/\([[\/.*]\|\]\)/\\&/g')/$(echo "$FILE" | sed -e 's/[\/&]/\\&/g')/g"
+}
+
+# Create a single temp file to be used for all files to check
+STAGEDFILE=`mktemp -t "git-precommit"`
+
+green=$(tput setaf 2)
+bold=$(tput bold)
+reset=$(tput sgr0)
+
+CHANGED=`git diff --name-only`
+if [ ! $CHANGED ]; then
+	echo "${green}${bold}No changed files${reset}"
+	exit 0
+fi
+echo "${green}${bold}Changed files:\n$CHANGED${reset}\n"
+
+for FILE in $CHANGED ; do
+	ABSOLUTEPATH="`git rev-parse --show-toplevel`/$FILE"
+
+	# Deleted or moved files will be listed in the diff list; if the file path
+	# no longer exists, skip all processing
+	if [ ! -e $ABSOLUTEPATH ]; then
+		continue
+	fi
+
+	# Check the staged version of the file rather than the current version
+	 cat $FILE > $STAGEDFILE
+
+	# For '@nocommit' checks, check for '@nocommit' where not prefixed by a quote
+	NO_COMMIT=$(egrep -c -i --regex=\[^\'\"\]@nocommit $STAGEDFILE)
+	if [ $NO_COMMIT == "0" ]; then
+		NO_COMMIT=$(egrep -c --regex=\[^\'\"\]NOCOMMIT $STAGEDFILE)
+	fi
+
+	if [ $NO_COMMIT != "0" ]; then
+		exitWithError "@nocommit or 'NOCOMMIT' phrase found in $FILE - cancelling commit!"
+	fi
+
+	# PHP lint for PHP files
+	IS_PHP_FILE=`grep '<?php' $STAGEDFILE`
+
+	if [[ $IS_PHP_FILE ]]; then
+
+		# Only output text for failing files, so run the first command quietly
+		php -d short_open_tag=off -l $STAGEDFILE > /dev/null 2>&1
+		RESULT=`echo $?`
+
+		if [ $RESULT != 0 ]; then
+			LINTOUTPUT=`php -d short_open_tag=off -l $STAGEDFILE 2>&1`
+			echo "`fixFilenameReferences "$LINTOUTPUT"`"
+			exitWithError "Commit cancelled due to PHP lint failure for $FILE"
+		fi
+	fi
+
+	PHPCS_STANDARD=`grep '@codingstandard ftlabs-phpcs' $STAGEDFILE`
+
+	if [[ $PHPCS_STANDARD ]]; then
+
+		# PHP Codesniff.  Slightly complicated by the way we want both errors and warnings
+		# to be output, but only want to make commits blocked by errors - but phpcs returns
+		# the same exit code for both.  Run normally, then if that outputs warnings, run
+		# again in only-errors mode and see if we can still commit.
+		PHPCSOUTPUT=`phpcs --standard=Assanka $STAGEDFILE 2>&1`
+		PHPCS=`echo $?`
+
+		if [ $PHPCS != "0" ]; then
+			echo "`fixFilenameReferences "$PHPCSOUTPUT"`"
+			phpcs --standard=Assanka -n $STAGEDFILE > /dev/null 2>&1
+			PHPCS=`echo $?`
+		fi
+
+		if [ $PHPCS != "0" ]; then
+			exitWithError "Commit cancelled due to phpcs syntax errors in $FILE"
+		fi
+	fi
+
+	JSV2_STANDARD=`grep '@codingstandard ftlabs-jsv2' $STAGEDFILE`
+
+	if [[ $JSV2_STANDARD ]]; then
+
+		# JSV2
+		JSV2OUTPUT=`jsv2 $STAGEDFILE`
+		JSV2=`echo $?`
+		echo "`fixFilenameReferences "$JSV2OUTPUT"`"
+		if [ $JSV2 != "0" ]; then
+			exitWithError "Commit cancelled due to jshint syntax errors in $FILE"
+		fi
+	fi
+
+	SHELL_LINT=`grep '# @autolint' $STAGEDFILE`
+
+	if [[ $SHELL_LINT ]]; then
+
+		SHELLLINTOUTPUT=`sh -n $STAGEDFILE`
+		SHLINT=`echo $?`
+		if [ $SHLINT != "0" ]; then
+			echo "`fixFilenameReferences "$SHELLLINTOUTPUT"`"
+			exitWithError "Commit cancelled due to shell script errors in $FILE"
+		fi
+	fi
+done
+
+# Mop up the temporary file
+if [ -e $STAGEDFILE ]; then
+	rm $STAGEDFILE
+fi
