@@ -64,9 +64,9 @@ for FILE in $CHANGED ; do
 	fi
 
 	# Check for debug flags left turned on
-	DEBUG_FLAG=$(pcregrep -Mc '@const.*\n.*DEBUG\s*=\s*true' $STAGEDFILE)
+	DEBUG_FLAG=$(pcregrep -Mc '@const.*\n.*\bDEBUG\s*=\s*true' $STAGEDFILE)
 	if [ $DEBUG_FLAG != "0" ]; then
-		pcregrep -M -C5 --colour '@const.*\n.*DEBUG\s*=\s*true' $STAGEDFILE
+		pcregrep -M -C5 --colour '@const.*\n.*\bDEBUG\s*=\s*true' $STAGEDFILE
 		exitWithError "'DEBUG = true' found in $FILE - cancelling commit!"
 	fi
 
