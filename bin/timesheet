@@ -15,7 +15,7 @@ if ($hour < $workDayStart || $hour > $workDayEnd) {
 
 echo "Inside work hours\n";
 
-if (!preg_match('/10.118|9/', file_get_contents('/etc/resolv.conf'))) {
+if (!preg_match('/10.11(8|9)/', file_get_contents('/etc/resolv.conf'))) {
 	echo "Not in dev environment\n";
 	exit(0);
 }
