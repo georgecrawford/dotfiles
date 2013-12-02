@@ -65,7 +65,7 @@ while true; do
 ssh "$SSHLOGIN" -L $PORT:localhost:$PORT '
 	test -f fswatch-rsyncd.'$LOCAL_PATH_HASH'.pid && { kill `cat fswatch-rsyncd.'$LOCAL_PATH_HASH'.pid`; rm fswatch-rsyncd.'$LOCAL_PATH_HASH'.pid; }
 	id=$(id -u $USER)
-	pids=$(ps aux | grep rsync | grep $id | grep '$LOCAL_PATH_HASH' | grep -v bash | awk "{print \$2}");
+	pids=$(pgrep -u $id -f ^rsync.*'$LOCAL_PATH_HASH');
 	count=$(echo $pids | wc -w);
 	if [ "$count" -gt 0 ] ; then kill $pids; echo -e "'$red'Killed ${count} existing rsync processes for this directory'$endColor'"; fi
 	rsync -v --daemon --address=127.0.0.1 --port='$PORT' --no-detach --config=fswatch-rsyncd.'$LOCAL_PATH_HASH'.conf
