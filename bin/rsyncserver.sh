@@ -64,10 +64,21 @@ trap 'echo Killing SSH $(jobs -p); kill $(jobs -p)' EXIT
 while true; do
 ssh "$SSHLOGIN" -L $PORT:localhost:$PORT '
 	test -f fswatch-rsyncd.'$LOCAL_PATH_HASH'.pid && { kill `cat fswatch-rsyncd.'$LOCAL_PATH_HASH'.pid`; rm fswatch-rsyncd.'$LOCAL_PATH_HASH'.pid; }
+
 	id=$(id -u $USER)
+
 	pids=$(pgrep -u $id -f ^rsync.*'$LOCAL_PATH_HASH');
 	count=$(echo $pids | wc -w);
 	if [ "$count" -gt 0 ] ; then kill $pids; echo -e "'$red'Killed ${count} existing rsync processes for this directory'$endColor'"; fi
+
+	pids=$(ps -eo pid,etime,args,uid | grep rsync | grep $id | awk '\''$2~/-/ {if ($2>1) print $1}'\'' )
+	count=$(echo $pids | wc -w);
+	if [ "$count" -gt 0 ] ; then kill $pids; echo -e "'$red'Killed ${count} rsync processes which were older than 1 day'$endColor'"; fi
+
+	count=$(find . -maxdepth 1 -name "fswatch*" -type f -mtime +2 | wc -w)
+	find . -maxdepth 1 -name "fswatch*" -type f -mtime +2 -delete
+	if [ "$count" -gt 0 ] ; then echo -e "'$red'Deleted ${count} stale fswatch log file(s)'$endColor'"; fi
+
 	rsync -v --daemon --address=127.0.0.1 --port='$PORT' --no-detach --config=fswatch-rsyncd.'$LOCAL_PATH_HASH'.conf
 ' &
 echo "connecting..."
