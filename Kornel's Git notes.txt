@@ -159,3 +159,11 @@ $ git diff --color-words
 $ git diff --stat
 $ git log --stat
 
+
+
+
+Delete the most recent (unpushed) commit:
+$ git reset --hard HEAD~1
+
+Delete the most recent (unpushed) commit, without destroying the work you've done:
+$ git reset --soft HEAD~1

@@ -8,23 +8,54 @@
 	excludesfile = ~/.gitignore
 	attributesfile = ~/.gitattributes
 	whitespace = fix,space-before-tab,blank-at-eol,tabwidth=4
+	trustctime = false
+	autocrlf = input
 [alias]
 	a = add
 	br = branch
 	c = commit -am
 	ci = commit
 	co = checkout
-	d = diff --color-words
+
+	# Show the diff between the latest commit and the current state
+	d = !"git diff-index --quiet HEAD -- || clear; git --no-pager diff --patch-with-stat"
+	ds = !"clear; git --no-pager diff --color-words --staged --patch-with-stat"
+
+	# `git di $number` shows the diff between the state `$number` revisions ago and the current state
+	di = !"d() { git diff --patch-with-stat HEAD~$1; }; git diff-index --quiet HEAD -- || clear; d"
+
 	dt = difftool
 	df = diff --color --color-words --abbrev
 	hist = log --pretty=tformat:'%x09%C(blue)%h %C(red)%ad%C(reset)%C(red) (%ar) %C(yellow)%an%C(reset): %s%C(green)%d%n' --date=short --graph --date-order --max-count=100
-	l10 = log --pretty=tformat:'%x09%C(blue)%h %C(red)%ad%C(reset)%C(red) (%ar) %C(yellow)%an%C(reset): %s%C(green)%d%n' --date=short --graph --date-order --max-count=10
-	l20 = log --pretty=tformat:'%x09%C(blue)%h %C(red)%ad%C(reset)%C(red) (%ar) %C(yellow)%an%C(reset): %s%C(green)%d%n' --date=short --graph --date-order --max-count=20
+
+	# View abbreviated SHA, description, and history graph of the latest 20 commits
+	l = log --pretty=oneline -n 20 --graph --abbrev-commit
+
 	p = push
-	s = status
+
+	# View the current working tree status using the short format
+	s = status -s
+
 	up = pull
-[mergetool]
-	keepBackup = true
+
+	# Show verbose output about tags, branches or remotes
+	tags = tag -l
+	branches = branch -a
+	remotes = remote -v
+
+	# Find branches containing commit
+	fb = "!f() { git branch -a --contains $1; }; f"
+
+	# Find tags containing commit
+	ft = "!f() { git describe --always --contains $1; }; f"
+
+	# Find commits by source code
+	fc = "!f() { git log --pretty=format:'%C(yellow)%h  %Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short -S$1; }; f"
+
+	# Find commits by commit message
+	fm = "!f() { git log --pretty=format:'%C(yellow)%h  %Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short --grep=$1; }; f"
+
+
 [push]
 	default = tracking
 [color]
@@ -52,16 +83,15 @@
 [difftool "bbdiff"]
 	cmd = bbdiff --wait --resume --ignore-trailing-spaces "$LOCAL" "$REMOTE"
 [merge]
-	tool = bbdiff
+	tool = diffmerge
 	log = true
 	stat = true
 [mergetool]
 	prompt = no
 	keepBackup = false
-[mergetool "bbdiff"]
-	cmd = bbdiff --wait --resume "$LOCAL" "$REMOTE"
-[alias]
-	bbmerge = mergetool
+[mergetool "diffmerge"]
+	cmd = diffmerge --merge --result=$MERGED $LOCAL $BASE $REMOTE
+	trustExitCode = false
 [init]
 	templatedir = ~/ftlabs/Git/templates/
 [apply]
