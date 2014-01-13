@@ -1,25 +1,63 @@
 #!/usr/bin/env php
 <?php
 
+
+function openTimesheet($args = null) {
+
+	global $lastRunFile;
+
+	file_put_contents($lastRunFile, time());
+
+	if ($args) {
+		return exec('open -a /Applications/Timesheet.app --args ' . $args);
+	} else {
+		return exec('open -a /Applications/Timesheet.app');
+	}
+}
+
 date_default_timezone_set('Europe/London');
 
-$workDayStart = 9;
-$workDayEnd   = 20;
+$workDayStart = 7;
+$workDayEnd   = 21;
+$lastRunFile  = dirname(__FILE__) . '/../../.timesheet';
 
-$hour = (int) date('G');
+$currentHour = (int) date('G');
 
-if ($hour < $workDayStart || $hour > $workDayEnd) {
+$lastRun = @file_get_contents($lastRunFile);
+
+$thisMorning = new DateTime('today');
+$thisMorning = $thisMorning->format('U');
+
+
+if ($currentHour < $workDayStart || $currentHour > $workDayEnd) {
 	echo "Not in work hours\n";
 	exit(0);
 }
-
 echo "Inside work hours\n";
 
 if (!preg_match('/10.11(8|9)/', file_get_contents('/etc/resolv.conf'))) {
 	echo "Not in dev environment\n";
 	exit(0);
 }
-
 echo "Inside dev environment\n";
 
-exec('open -a /Applications/Timesheet.app');
+if ($lastRun < $thisMorning) {
+
+	echo "Script not yet run today\n";
+	$out = exec('echo $(osascript ~/bin/timesheet.app);');
+
+	if (strpos($out, 'Yesterday')) {
+		echo "Navigating to yesterday\n";
+		$yesterday = new DateTime('yesterday');
+		return openTimesheet('--app="https://charlie.assanka.com/timesheets/recordtime/index?date=' . $yesterday->format('d-m-Y') . '"');
+	} else if (strpos($out, 'Today')) {
+		echo "Navigating to today\n";
+	} else {
+		echo "Cancelling\n";
+		exit(0);
+	}
+} else {
+	echo "Script already run today\n";
+}
+
+openTimesheet();
