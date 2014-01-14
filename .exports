@@ -16,3 +16,6 @@ export JSTESTDRIVER_HOME=~/bin/java
 
 # Python path
 export PYTHONPATH=/usr/local/lib/python2.6/site-packages/
+
+# This changes the blue for directories to cyan:
+export LSCOLORS=gxfxcxdxbxegedabagacad
