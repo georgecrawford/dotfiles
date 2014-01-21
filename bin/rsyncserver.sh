@@ -31,6 +31,7 @@ MODULE=sync${UID}module$RANDOM
 # dir/*** excludes the directory and all subdirs, so git/bzr repos are separate for local and remote
 # no quotes around * are necessary
 RSYNCFLAGS="--port=$PORT -razP --keep-dirlinks --inplace --update --exclude-from $HOME/ftlabs/rsync-exclude"
+RSYNCDOWNFLAGS="--port=$PORT -razP --keep-dirlinks --inplace --update --exclude-from $HOME/ftlabs/rsync-exclude-down"
 
 CONF="""
 lock file = \$HOME/fswatch-rsyncd.$LOCAL_PATH_HASH.lock
@@ -100,9 +101,9 @@ sleep 1;
 #test -d "$LOCAL_DIR" || mkdir "$LOCAL_DIR"
 
 echo "Downloading"
-# rsync -P $RSYNCFLAGS "rsync://rsyncclient@localhost/$MODULE/" "${LOCAL_DIR%/}"/ || {
+# rsync -P $RSYNCDOWNFLAGS "rsync://rsyncclient@localhost/$MODULE/" "${LOCAL_DIR%/}"/ || {
 # now that initial sync is done, -P is too verbose
-rsync --partial $RSYNCFLAGS "rsync://rsyncclient@localhost/$MODULE/" "${LOCAL_DIR%/}"/ || {
+rsync --partial $RSYNCDOWNFLAGS "rsync://rsyncclient@localhost/$MODULE/" "${LOCAL_DIR%/}"/ || {
 	echo "Failed to sync data down";
 	exit 1;
 }
