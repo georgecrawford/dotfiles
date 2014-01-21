@@ -20,10 +20,14 @@ date_default_timezone_set('Europe/London');
 $workDayStart = 7;
 $workDayEnd   = 21;
 $lastRunFile  = dirname(__FILE__) . '/../../.timesheet';
+$lastWakeFile = dirname(__FILE__) . '/../../.timesheet-idle-end';
 
 $currentHour = (int) date('G');
 
-$lastRun = @file_get_contents($lastRunFile);
+$lastRun  = @file_get_contents($lastRunFile);
+$lastWake = @file_get_contents($lastWakeFile);
+
+@unlink($lastWakeFile);
 
 $thisMorning = new DateTime('today');
 $thisMorning = $thisMorning->format('U');
@@ -40,6 +44,27 @@ if (!preg_match('/10.11(8|9)/', file_get_contents('/etc/resolv.conf'))) {
 	exit(0);
 }
 echo "Inside dev environment\n";
+
+if ($lastWake) {
+
+	$timeSinceIdle = (time() - (int) $lastWake);
+
+	if ($timeSinceIdle > 3600) {
+		$hours = floor($timeSinceIdle / 3600);
+		$mins  = ceil($timeSinceIdle % 3600 / 60);
+		$timeSinceIdle = sprintf('%s hour%s, %s minute%s', $hours, ($hours > 1 ? 's' : ''), $mins, ($mins > 1 ? 's' : ''));
+	} else if ($timeSinceIdle > 60) {
+		$timeSinceIdle = ceil($timeSinceIdle / 60) . ' minutes';
+	} else {
+		$timeSinceIdle = $timeSinceIdle . ' seconds';
+	}
+
+	echo "Time since last idle: $timeSinceIdle\n";
+	exec('osascript -e "tell application \"System Events\"" -e "activate" -e "display dialog \"Session started: ' . date('H:i:s', $lastWake) . '.\nTime since last idle: ' . $timeSinceIdle . '\" buttons {\"OK\"} default button \"OK\" " -e "end tell"');
+
+} else {
+	echo "No long idle time, normal timesheet\n";
+}
 
 if ($lastRun < $thisMorning) {
 
