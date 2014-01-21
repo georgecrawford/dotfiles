@@ -13,7 +13,7 @@
 [alias]
 	a = add
 	br = branch
-	c = commit -am
+	c = commit -m
 	ci = commit
 	co = checkout
 
