@@ -25,6 +25,8 @@ alias fireworks="open -a '/Applications/Adobe Fireworks CS6/Adobe Fireworks CS6.
 alias photoshop="open -a '/Applications/Adobe Photoshop CS6/Adobe Photoshop.app'"
 # alias gpr="~/code/gpr $1"
 
+# Node.js with --harmony flag
+alias node="node --harmony"
 
 # general shortcuts
 alias sites="cd ~/Sites"
