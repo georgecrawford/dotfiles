@@ -40,9 +40,15 @@ fsevent.watch path, options do |directories|
 		directory = Pathname.new directory
 		relative = directory.relative_path_from pathobj
 		relative = relative.to_s + '/'
+
+		# Don't add Git metadata dirs, as they are ignored by rsync anyway
+		next if relative[0,4] == ".git"
+
 		subcommands.push(sprintf(repeating, relative))
 		changedpaths.push << relative
 	}
+
+	next if subcommands.length == 0
 
 	fullcommand = sprintf(command, subcommands.join(' '))
 	puts "\nChanged paths: [" + changedpaths.join(', ') + ']'
