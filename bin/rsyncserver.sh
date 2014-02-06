@@ -114,7 +114,7 @@ rsync $RSYNCFLAGS "${LOCAL_DIR%/}"/ "rsync://rsyncclient@localhost/$MODULE/" || 
 	exit 1;
 }
 
-fsevent.rb "$LOCAL_DIR" 'rsync '"$RSYNCFLAGS"' --delete-after %s --filter="+ */" '"$LOCAL_DIR"'/ rsync://rsyncclient@localhost/'"$MODULE"'/ && echo " ... uploaded"' '--filter="+ %s***"'
+fsevent.rb "$LOCAL_DIR" 'rsync '"$RSYNCFLAGS"' --delete-after %s --filter="+ */" '"$LOCAL_DIR"'/ rsync://rsyncclient@localhost/'"$MODULE"'/ && echo " ... uploaded" && osx-notifier --message "Rsync complete" --type "pass" --title "Rsync" --group "rsync" --activate "com.apple.Terminal"' '--filter="+ %s***"'
 
 # Working fswatch example
 # `dirname "$0"`/fswatch "$LOCAL_DIR" 'printf "Changes in %s..." "$FSWATCH_CHANGED_RELPATH"; echo -v '"$RSYNCFLAGS"' --delete-after --filter="+ ${FSWATCH_CHANGED_RELPATH}***" "--filter=+ */" "$FSWATCH_ROOT_PATH" rsync://rsyncclient@localhost/'"$MODULE"'/; rsync -v '"$RSYNCFLAGS"' --delete-after --filter="+ ${FSWATCH_CHANGED_RELPATH}***" "--filter=+ */" "$FSWATCH_ROOT_PATH" rsync://rsyncclient@localhost/'"$MODULE"'/ && echo "uploaded"'
