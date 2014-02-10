@@ -54,6 +54,10 @@ class parser {
 		return $this->_string;
 	}
 
+	private function _($string) {
+		return $this->_openEscape . $string . $this->_closeEscape;
+	}
+
 	private function _escapeControlSequences() {
 		$this->_string = preg_replace_callback('/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]/', array($this, '_escapeControlSequence'), $this->_string);
 		$this->_string = preg_replace_callback('/\r/', array($this, '_escapeControlSequence'), $this->_string);
@@ -61,7 +65,7 @@ class parser {
 	}
 
 	private function _countLines() {
-		$pattern = "/A total of {$this->_openEscape}light-red{$this->_closeEscape}(\d+){$this->_openEscape}light-blue{$this->_closeEscape} lines with matches found/";
+		$pattern = sprintf('/A total of %s(\d+)%s lines with matches found/', $this->_('light-red'), $this->_('light-blue'));
 		if (preg_match($pattern, $this->_string, $matches)) {
 			$this->_lineCount = $matches[1];
 			$this->_padLength = strlen((string) $this->_lineCount) + 1;
@@ -69,7 +73,7 @@ class parser {
 	}
 
 	private function _parseMatches() {
-		$pattern = "/({$this->_openEscape}clear{$this->_closeEscape})?({$this->_openEscape}red{$this->_closeEscape})(.*?)({$this->_openEscape}reset{$this->_closeEscape}{$this->_openEscape}clear{$this->_closeEscape}:{$this->_openEscape}light-red{$this->_closeEscape})(\d+)({$this->_openEscape}reset{$this->_closeEscape}{$this->_openEscape}clear{$this->_closeEscape})/";
+		$pattern = sprintf('/(%s)?(%s)(.*?)(%s%s:%s)(\d+)(%s%s:)(\d+)/', $this->_('clear'), $this->_('red'), $this->_('reset'), $this->_('clear'), $this->_('light-red'), $this->_('reset'), $this->_('clear'));
 		$this->_string = preg_replace_callback($pattern, array($this, '_storeLineData'), $this->_string);
 	}
 
@@ -86,18 +90,20 @@ class parser {
 	}
 
 	private function _storeLineData($matches) {
-		$file = $matches[3];
-		$line = $matches[5];
+        $file   = $matches[3];
+        $line   = $matches[5];
+        $column = $matches[7];
 
-		$this->_logData[$this->_counter] = array($file, $line);
+		$this->_logData[$this->_counter] = array($file, $line, $column);
 
-		return $matches[1] . $this->_escapeCounter . str_pad($this->_counter++, $this->_padLength) . $this->_escapeRed . $matches[3] . $matches[4] . $matches[5] . $matches[6];
+		return $matches[1] . $this->_escapeCounter . str_pad($this->_counter++, $this->_padLength) . $this->_escapeRed . $matches[3] . $matches[4] . $matches[5] . $matches[6] . $matches[7];
 	}
 
 }
 
 $parser = new parser(file_get_contents($_SERVER['argv'][1]));
 echo $parser->parse();
+echo "\n\033[0;32mRun eg. \033[0;45m s 123 \033[0m\033[0;32m to open a match in Sublime Text\033[0m\n";
 
 
 

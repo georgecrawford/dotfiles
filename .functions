@@ -223,7 +223,7 @@ function grrr() {
 			return
 	fi
 
-	ag -i --nobreak --noheading --color-line-number='1;31' --color-path='0;31' --color-match='1;36' --shortoutput --stats-summary --depth=50 --show-progress --ignore '*~' --hidden "$@"
+	ag -i --nobreak --noheading --color-line-number='1;31' --color-path='0;31' --color-match='1;36' --shortoutput --column --stats-summary --depth=50 --show-progress --ignore '*~' --hidden "$@"
 }
 
 function grr() {
@@ -235,7 +235,7 @@ function grr() {
 	file=$(mktemp -t grr)
 
 	# Script ensures terminal color escape sequences are preserved (something to do with tty: http://stackoverflow.com/questions/1401002/trick-an-application-into-thinking-its-stdin-is-interactive-not-a-pipe)
-	out=$(script -q $file ag -i --nobreak --noheading --color-line-number='1;31' --color-path='0;31' --color-match='1;36' --shortoutput --stats-summary --depth=50 --show-progress --ignore '*~' --hidden "$@")
+	out=$(script -q $file ag -i --nobreak --noheading --color-line-number='1;31' --color-path='0;31' --color-match='1;36' --shortoutput --column --stats-summary --depth=50 --show-progress --ignore '*~' --hidden "$@")
 
 	pipe-grr-to-subl "$file"
 }
