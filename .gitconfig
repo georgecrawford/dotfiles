@@ -3,7 +3,7 @@
 	email = george.crawford@ft.com
 	# email = g.o.crawford@gmail.com
 [core]
-	editor = nano
+	editor = "subl -n -w"
 	# pager = cat
 	excludesfile = ~/.gitignore
 	attributesfile = ~/.gitattributes
