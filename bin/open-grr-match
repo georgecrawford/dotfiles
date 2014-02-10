@@ -13,4 +13,6 @@ if (empty($key) or empty($matches->$key)) {
 }
 
 $match = $matches->$key;
-`subl $match[0]:$match[1]`;
+$dir = $matches->cwd;
+
+`subl $dir$match[0]:$match[1]`;

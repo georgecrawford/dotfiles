@@ -28,7 +28,6 @@ class parser {
 	private $_escapeCounter = "\033[0;32m";
 
 	private $_logFilePath = '~/.grr_matches';
-	private $_cwd;
 
 	private $_logData = array();
 
@@ -42,7 +41,7 @@ class parser {
 		$cmd = "eval dir='" . $this->_logFilePath . "'; echo \$dir";
 		$this->_logFilePath = trim(`$cmd`);
 
-		$this->_cwd = getcwd() . '/';
+		$this->_logData['cwd'] = getcwd() . '/';
 	}
 
 	public function parse() {
@@ -87,7 +86,7 @@ class parser {
 	}
 
 	private function _storeLineData($matches) {
-		$file = $this->_cwd . $matches[3];
+		$file = $matches[3];
 		$line = $matches[5];
 
 		$this->_logData[$this->_counter] = array($file, $line);
@@ -96,9 +95,6 @@ class parser {
 	}
 
 }
-// echo $_SERVER['argv'][1];
-// die;
-// die(file_get_contents($_SERVER['argv'][1]));
 
 $parser = new parser(file_get_contents($_SERVER['argv'][1]));
 echo $parser->parse();
