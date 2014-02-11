@@ -50,6 +50,7 @@ class parser {
 		$this->_parseMatches();
 		$this->_restoreControlSequences();
 		$this->_writeLogData();
+		$this->_writeInstructions();
 
 		return $this->_string;
 	}
@@ -67,7 +68,7 @@ class parser {
 	private function _countLines() {
 		$pattern = sprintf('/A total of %s(\d+)%s lines with matches found/', $this->_('light-red'), $this->_('light-blue'));
 		if (preg_match($pattern, $this->_string, $matches)) {
-			$this->_lineCount = $matches[1];
+			$this->_lineCount = (int) $matches[1];
 			$this->_padLength = strlen((string) $this->_lineCount) + 1;
 		}
 	}
@@ -89,6 +90,10 @@ class parser {
 		if ($this->_logData) file_put_contents($this->_logFilePath, json_encode($this->_logData));
 	}
 
+	private function _writeInstructions() {
+		if ($this->_lineCount) $this->_string .= "\n\033[0;32m # Run eg. \033[0;45m s 123 \033[0m\033[0;32m to open a match in Sublime Text\033[0m\n";
+	}
+
 	private function _storeLineData($matches) {
         $file   = $matches[3];
         $line   = $matches[5];
@@ -103,7 +108,6 @@ class parser {
 
 $parser = new parser(file_get_contents($_SERVER['argv'][1]));
 echo $parser->parse();
-echo "\n\033[0;32mRun eg. \033[0;45m s 123 \033[0m\033[0;32m to open a match in Sublime Text\033[0m\n";
 
 
 

@@ -437,7 +437,14 @@ newwin() {
 
 
 work() {
-	subl --project /Users/george/Documents/Projects/ECON2011001/Economist.sublime-project
+	local dir=$(basename `pwd`)
+
+	if [ $dir == 'econhtml5' ]; then
+		subl --project /Users/george/Documents/Projects/Economist.sublime-project
+	else
+		subl -n .
+	fi
+
 	newtab -G sync
 }
 
