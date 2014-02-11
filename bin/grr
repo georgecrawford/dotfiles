@@ -1,0 +1,264 @@
+#!/usr/bin/env php
+<?php
+
+define('BUF_SIZ', 1024);        # max buffer size
+define('FD_WRITE', 0);        # stdin
+define('FD_READ', 1);        # stdout
+define('FD_ERR', 2);        # stderr
+
+
+class Handler {
+
+	private $_counter = 1;
+	private $_lineCount;
+	private $_padLength = 5;
+
+	private $_string;
+
+	private $_openEscape = '<<';
+	private $_closeEscape = '>>';
+
+	private $_escapeChars = array(
+		"\r"         => 'carriage-return',
+		"\n"         => 'newline',
+		"\033[K"     => 'clear',
+		"\033[0m"    => 'reset',
+		"\033[1;31m" => 'light-red',
+		"\033[1;36m" => 'light-cyan',
+		"\033[1;34m" => 'light-blue',
+		"\033[0;31m" => 'red',
+		"\033[0;34m" => 'blue'
+	);
+	private $_escapeCharsReversed = array();
+	private $_escapeRed = "\033[0;31m";
+	private $_escapeCounter = "\033[0;32m";
+
+	private $_logFilePath = '~/.grr_matches';
+
+	private $_logData = array();
+
+	public function __construct($params) {
+
+		unset($params[0]);
+
+		$this->_disableBuffering();
+		$this->_executeCommand($params);
+
+		// $this->_string = $string;
+
+		// foreach ($this->_escapeChars as $escape => $plain) {
+		// 	$this->_escapeCharsReversed[$this->_openEscape . $plain . $this->_closeEscape] = $escape;
+		// }
+
+		// $cmd = "eval dir='" . $this->_logFilePath . "'; echo \$dir";
+		// $this->_logFilePath = trim(`$cmd`);
+
+		// $this->_logData['cwd'] = getcwd() . '/';
+	}
+
+	// public function parse() {
+	// 	$this->_escapeControlSequences();
+	// 	$this->_countLines();
+	// 	$this->_parseMatches();
+	// 	$this->_restoreControlSequences();
+	// 	$this->_writeLogData();
+	// 	$this->_writeInstructions();
+
+	// 	return $this->_string;
+	// }
+
+	private function _disableBuffering() {
+
+		// Turn off output buffering
+		ini_set('output_buffering', 'off');
+
+		// Turn off PHP output compression
+		ini_set('zlib.output_compression', false);
+
+		// Implicitly flush the buffer(s)
+		ini_set('implicit_flush', true);
+		ob_implicit_flush(true);
+
+		// Clear, and turn off output buffering
+		while (ob_get_level() > 0) {
+
+			// Get the curent level
+			$level = ob_get_level();
+
+			// End the buffering
+			ob_end_clean();
+
+			// If the current level has not changed, abort
+			if (ob_get_level() == $level) break;
+		}
+
+		// Disable apache output buffering/compression
+		if (function_exists('apache_setenv')) {
+			apache_setenv('no-gzip', '1');
+			apache_setenv('dont-vary', '1');
+		}
+	}
+
+	private function _executeCommand($params) {
+		$cmd = "ag -i --nobreak --noheading --color-line-number='1;31' --color-path='0;31' --color-match='1;36' --shortoutput --column --stats-summary --depth=50 --show-progress --ignore '*~' --hidden " . implode(' ', $params) . ' 2>&1';
+
+		//$cmd = 'tail -f /var/log/system.log';
+
+		if (($ret = $this->_proc_exec($cmd)) === false) {
+			die("Error: not enough FD or out of memory.\n");
+		} else if ($ret == 127) {
+			die("Command not found (returned by sh).\n");
+		} else {
+			exit($ret);
+		}
+
+
+		// passthru($cmd);
+		// die;
+
+		// $cmd = 'tail -f /var/log/system.log';
+
+		// $descriptorspec = array(
+		// 	0 => array("pipe", "r"),   // stdin is a pipe that the child will read from
+		// 	1 => array("pipe", "w"),   // stdout is a pipe that the child will write to
+		// 	2 => array("pipe", "w")    // stderr is a pipe that the child will write to
+		// );
+
+		// flush();
+		// $process = proc_open($cmd, $descriptorspec, $pipes, realpath('./'), array());
+		// stream_set_blocking($pipes[2], 0);
+
+		// // echo "Command: $cmd\n";
+		// // echo "Starting:\n";
+
+		// if (is_resource($process)) {
+
+		// 	if ($error = stream_get_contents($pipes[2])) {
+		// 		die('Error: ' . $error);
+		// 	}
+
+		// 	while ($s = stream_get_contents($pipes[1], 1000)) {
+		// 		echo $s;
+		// 		flush();
+		// 	}
+
+		// 	proc_close($process);
+
+		// } else {
+		// 	die('Not resource');
+		// }
+
+		echo "Done\n";
+	}
+
+	private function _($string) {
+		return $this->_openEscape . $string . $this->_closeEscape;
+	}
+
+	private function _escapeControlSequences() {
+		$this->_string = preg_replace_callback('/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]/', array($this, '_escapeControlSequence'), $this->_string);
+		$this->_string = preg_replace_callback('/\r/', array($this, '_escapeControlSequence'), $this->_string);
+		$this->_string = preg_replace_callback('/\n/', array($this, '_escapeControlSequence'), $this->_string);
+	}
+
+	private function _countLines() {
+		$pattern = sprintf('/A total of %s(\d+)%s lines with matches found/', $this->_('light-red'), $this->_('light-blue'));
+		if (preg_match($pattern, $this->_string, $matches)) {
+			$this->_lineCount = (int) $matches[1];
+			$this->_padLength = strlen((string) $this->_lineCount) + 1;
+		}
+	}
+
+	private function _parseMatches() {
+		$pattern = sprintf('/(%s)?(%s)(.*?)(%s%s:%s)(\d+)(%s%s:)(\d+)/', $this->_('clear'), $this->_('red'), $this->_('reset'), $this->_('clear'), $this->_('light-red'), $this->_('reset'), $this->_('clear'));
+		$this->_string = preg_replace_callback($pattern, array($this, '_storeLineData'), $this->_string);
+	}
+
+	private function _restoreControlSequences() {
+		$this->_string = str_replace(array_keys($this->_escapeCharsReversed), array_values($this->_escapeCharsReversed), $this->_string);
+	}
+
+	private function _escapeControlSequence($matches) {
+		if (isset($this->_escapeChars[$matches[0]])) return $this->_openEscape . $this->_escapeChars[$matches[0]] . $this->_closeEscape;
+	}
+
+	private function _writeLogData() {
+		if ($this->_logData) file_put_contents($this->_logFilePath, json_encode($this->_logData));
+	}
+
+	private function _writeInstructions() {
+		if ($this->_lineCount) $this->_string .= "\n\033[0;32m # Run eg. \033[0;45m s 123 \033[0m\033[0;32m to open a match in Sublime Text\033[0m\n";
+	}
+
+	private function _storeLineData($matches) {
+		$file   = $matches[3];
+		$line   = $matches[5];
+		$column = $matches[7];
+
+		$this->_logData[$this->_counter] = array($file, $line, $column);
+
+		return $matches[1] . $this->_escapeCounter . str_pad($this->_counter++, $this->_padLength) . $this->_escapeRed . $matches[3] . $matches[4] . $matches[5] . $matches[6] . $matches[7];
+	}
+
+	/*
+	 * Wrapper for proc_*() functions.
+	 * The first parameter $cmd is the command line to execute.
+	 * Return the exit code of the process.
+	 */
+	function _proc_exec($cmd) {
+
+		$descriptorspec = array(
+			0 => array("pipe", "r"),
+			1 => array("pipe", "w"),
+			2 => array("pipe", "w")
+		);
+
+		$ptr = proc_open($cmd, $descriptorspec, $pipes, NULL, $_ENV);
+		if (!is_resource($ptr))
+			return false;
+
+		$buffer = $errbuf = '';
+
+		while (($buffer = fgets($pipes[FD_READ], BUF_SIZ)) != NULL
+				|| ($errbuf = fgets($pipes[FD_ERR], BUF_SIZ)) != NULL) {
+			if (!isset($flag)) {
+				$pstatus = proc_get_status($ptr);
+				$first_exitcode = $pstatus["exitcode"];
+				$flag = true;
+			}
+			if (strlen($buffer))
+				echo $buffer;
+			if (strlen($errbuf))
+				echo "ERR: " . $errbuf;
+		}
+
+		foreach ($pipes as $pipe)
+			fclose($pipe);
+
+		/* Get the expected *exit* code to return the value */
+		$pstatus = proc_get_status($ptr);
+		if (!strlen($pstatus["exitcode"]) || $pstatus["running"]) {
+
+			/* we can trust the retval of proc_close() */
+			if ($pstatus["running"])
+				proc_terminate($ptr);
+			$ret = proc_close($ptr);
+		} else {
+			if ((($first_exitcode + 256) % 256) == 255
+					&& (($pstatus["exitcode"] + 256) % 256) != 255)
+				$ret = $pstatus["exitcode"];
+			elseif (!strlen($first_exitcode))
+				$ret = $pstatus["exitcode"];
+			elseif ((($first_exitcode + 256) % 256) != 255)
+				$ret = $first_exitcode;
+			else
+				$ret = 0; /* we "deduce" an EXIT_SUCCESS ;) */
+			proc_close($ptr);
+		}
+
+		return ($ret + 256) % 256;
+	}
+}
+
+$handler = new Handler($_SERVER['argv']);
+
