@@ -74,8 +74,25 @@ class parser {
 	}
 
 	private function _parseMatches() {
-		$pattern = sprintf('/(%s)?(%s)(.*?)(%s%s:%s)(\d+)(%s%s:)(\d+)/', $this->_('clear'), $this->_('red'), $this->_('reset'), $this->_('clear'), $this->_('light-red'), $this->_('reset'), $this->_('clear'));
+		$pattern = sprintf('/(%s)?(%s)(.*?)(%s%s:%s)(\d+)(%s%s)(?:(?:\:(\d+))|(-))/', $this->_('clear'), $this->_('red'), $this->_('reset'), $this->_('clear'), $this->_('light-red'), $this->_('reset'), $this->_('clear'));
 		$this->_string = preg_replace_callback($pattern, array($this, '_storeLineData'), $this->_string);
+	}
+
+	private function _storeLineData($matches) {
+		$file   = $matches[3];
+		$line   = $matches[5];
+		$column = $matches[7];
+
+		if (is_numeric($column)) {
+
+			$this->_logData[$this->_counter] = array($file, $line, $column);
+
+			return $matches[1] . $this->_escapeCounter . str_pad($this->_counter++, $this->_padLength) . $this->_escapeRed . $matches[3] . $matches[4] . $matches[5] . $matches[6] . ':' . $matches[7];
+
+		} else {
+			return $matches[0];
+		}
+
 	}
 
 	private function _restoreControlSequences() {
@@ -92,16 +109,6 @@ class parser {
 
 	private function _writeInstructions() {
 		if ($this->_lineCount) $this->_string .= "\n\033[0;32m # Run eg. \033[0;45m s 123 \033[0m\033[0;32m to open a match in Sublime Text\033[0m\n";
-	}
-
-	private function _storeLineData($matches) {
-        $file   = $matches[3];
-        $line   = $matches[5];
-        $column = $matches[7];
-
-		$this->_logData[$this->_counter] = array($file, $line, $column);
-
-		return $matches[1] . $this->_escapeCounter . str_pad($this->_counter++, $this->_padLength) . $this->_escapeRed . $matches[3] . $matches[4] . $matches[5] . $matches[6] . $matches[7];
 	}
 
 }
