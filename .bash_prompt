@@ -19,7 +19,7 @@ BLUE=$(tput setaf 4)
 CYAN=$(tput setaf 6)
 MAGENTA=$(tput setaf 9)
 ORANGE=$(tput setaf 172)
-GREEN=$(tput setaf 190)
+GREEN=$(tput setaf 10)
 PURPLE=$(tput setaf 141)
 WHITE=$(tput setaf 256)
 LIGHTGREY="$(tput setaf 8)"
@@ -51,12 +51,50 @@ function git_info() {
 
 # Only show username/host if not default
 function usernamehost() {
-	if [ $USER != $default_username ]; then echo "${MAGENTA}$USER ${WHITE}at ${ORANGE}$HOSTNAME $WHITEin "; fi
+	echo "${MAGENTA}$USER ${GREY}@${ORANGE} $HOSTNAME${GREY} in ${YELLOW}$(current_dir) ${UNDERLINE}${POWDER_BLUE}$(kube_prompt)${RESET}";
 }
 
-function vpnstatus() {
-	checkDevEnv
-	if [ $? -ne 1 ]; then echo -e "${LIME_YELLOW}${LIGHTGREYBG}\xe2\x98\x85 ${RESET} "; else echo -e "${GREY}\xe2\x98\x85 ${RESET} " ; fi
+
+function current_dir() {
+    local pwd_length=42  # The maximum length we want (seems to fit nicely
+                         # in a default length Terminal title bar).
+
+    # Get the current working directory.  We'll format it in $dir.
+    local dir="$PWD"
+
+    # Substitute a leading path that's in $HOME for "~"
+    if [[ "$HOME" == ${dir:0:${#HOME}} ]] ; then
+        dir="~${dir:${#HOME}}"
+    fi
+
+    # Truncate if we're too long.
+    # We preserve the leading '/' or '~/', and substitute
+    # ellipses for some directories in the middle.
+    if [[ "$dir" =~ (~){0,1}/.*(.{${pwd_length}}) ]] ; then
+        local tilde=${BASH_REMATCH[1]}
+        local directory=${BASH_REMATCH[2]}
+
+        # At this point, $directory is the truncated end-section of the
+        # path.  We will now make it only contain full directory names
+        # (e.g. "ibrary/Mail" -> "/Mail").
+        if [[ "$directory" =~ [^/]*(.*) ]] ; then
+            directory=${BASH_REMATCH[1]}
+        fi
+
+        dir="$tilde/…$directory"
+    fi
+
+    echo $dir
 }
 
-PS1="\n\[\e]2;$PWD\[\a\]\[\e]1;\]$(basename "$(dirname "$PWD")")/\W\[\a\]${BOLD}\$(vpnstatus)\$(usernamehost)\[$GREEN\]\w\$(git_info)\[$LIME_YELLOW\]\n\$  \[$RESET\]"
+# function current_dir() {
+# 	dir=$PWD
+# 	pushd "$dir" > /dev/null # Switch to the given directory; suppress output.
+# 	dirs -0 # Run "dirs" and save to variable.
+# 	popd > /dev/null # Switch back to where we were
+# }
+
+
+PS1="\[\e]2;[bash]   \h::\]\W\[\a\]\[\e]1;\]/\W\[\a\]${BOLD}\$(usernamehost)\[$RESET\]\n\$ "
+
+export PROMPT_COMMAND='history -a'

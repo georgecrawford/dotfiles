@@ -22,42 +22,16 @@ function server() {
 # List all useful IPs
 function ip() {
 	echo
-	echo $'Ethernet:\t' `ipconfig getifaddr en0`
-	echo $'Wifi:\t\t' `ipconfig getifaddr en1`
-	echo $'USB:\t\t' `ipconfig getifaddr en3`
-	echo $'Public IP:\t' `ippublic`
+	# echo $'Thunderbolt Bridge:\t' `ipconfig getifaddr bridge0`
+	echo $'Wifi:\t\t\t' `ipconfig getifaddr en0`
+	echo $'USB Ethernet:\t\t' `ipconfig getifaddr en4`
+	echo $'Public IP:\t\t' `ippublic`
 	echo $'Assigned IPs:\t'
 	ips
 	echo
 }
 
 
-# A better git clone
-# clones a repository, cds into it, and opens it in my editor.
-#
-# Based on https://github.com/stephenplusplus/dots/blob/master/.bash_profile#L68 by @stephenplusplus
-#
-# Note: subl is already setup as a shortcut to Sublime. Replace with your own editor if different
-#
-# - arg 1 - url|username|repo remote endpoint, username on github, or name of
-#           repository.
-# - arg 2 - (optional) name of repo
-#
-# usage:
-#   $ clone things
-#     .. git clone git@github.com:georgecrawford/things.git things
-#     .. cd things
-#     .. subl .
-#
-#   $ clone yeoman generator
-#     .. git clone git@github.com:yeoman/generator.git generator
-#     .. cd generator
-#     .. subl .
-#
-#   $ clone git@github.com:georgecrawford/dotfiles.git
-#     .. git clone git@github.com:georgecrawford/dotfiles.git dotfiles
-#     .. cd dots
-#     .. subl .
 
 function clone {
   # customize username to your own
@@ -66,7 +40,7 @@ function clone {
   local url=$1;
   local repo=$2;
 
-  if [[ ${url:0:4} == 'http' || ${url:0:3} == 'git' ]]
+  if [[ ${url:0:4} == 'http' || ${url:0:3} == 'git' || ${url:0:3} == 'ssh' ]]
   then
 	# just clone this thing.
 	repo=$(echo $url | awk -F/ '{print $NF}' | sed -e 's/.git$//');
@@ -80,41 +54,21 @@ function clone {
 	url="git@github.com:$url/$repo.git";
   fi
 
-  git clone $url $repo && cd $repo && subl .;
+  git clone $url $repo && cd $repo && code .;
 }
 
 function gb() {
 	php -r "$(cat <<'PHP'
-		exec('git branch --no-color', $branches);
+		exec('git branch --no-color -vv', $branches);
 		foreach ($branches as $branch) {
-			if (preg_match('/redmine(\d+)/', $branch, $matches)) {
-				$redmineUrl = sprintf("https://redmine.labs.ft.com/issues/%s)", $matches[1]);
-				echo sprintf("%s \t \033[1;32m%s\033[0m\n", $branch, $redmineUrl);
-			} else {
-				echo $branch . "\n";
-			}
+			echo $branch . "\n";
 		};
 PHP
 	)"
 }
 
 function gl() {
-	php -r "$(cat <<'PHP'
-		$remote = exec('git remote -v');
-		if (!preg_match('/^origin.*push/', $remote)) {
-			exit;
-		}
-		$remote = preg_replace('/.*git@(.*?):(.*?)\.git.*/', 'http://\1/\2/commit/', $remote);
-		exec('git log -n5 --name-status --abbrev-commit', $lines);
-		foreach ($lines as $line) {
-			echo preg_replace_callback('/commit ([0-9a-f]{7})\b/', function($matches) {
-				global $remote;
-				exec('git branch -r --contains ' . $matches[1], $containingBranches);
-				return empty($containingBranches) ? "commit ${matches[1]} \033[1;32m(not pushed)\033[0m" : "commit ${matches[1]} \033[1;32m$remote{$matches[1]}\033[0m";;
-			}, $line) . "\n";
-		};
-PHP
-	)"
+	nice-git-log | less -R
 }
 
 
@@ -130,16 +84,6 @@ cp_p () {
 # 	encoding="$(curl -LIs -H 'User-Agent: Mozilla/5 Gecko' -H 'Accept-Encoding: gzip,deflate,compress,sdch' "$1" | grep '^Content-Encoding:')" && echo "$1 is encoded using ${encoding#* }" || echo "$1 is not using any encoding"
 # }
 
-# Syntax-highlight JSON strings or files
-function json() {
-	if [ -p /dev/stdin ]; then
-		# piping, e.g. `echo '{"foo":42}' | json`
-		python -mjson.tool | pygmentize -l javascript
-	else
-		# e.g. `json '{"foo":42}'`
-		python -mjson.tool <<< "$*" | pygmentize -l javascript
-	fi
-}
 
 # # prune a set of empty directories
 # function prunedir () {
@@ -223,7 +167,7 @@ function grrr() {
 			return
 	fi
 
-	ag -i --nobreak --noheading --color-line-number='1;31' --color-path='0;31' --color-match='1;36' --shortoutput --column --stats-summary --depth=50 --show-progress --ignore '*~' --hidden "$@"
+	ag-old -i --nobreak --noheading --color-line-number='1;31' --color-path='0;31' --color-match='1;36' --shortoutput --column --stats-summary --depth=50 --show-progress --ignore '*~' --hidden "$@"
 }
 
 function grr() {
@@ -235,12 +179,16 @@ function grr() {
 	file=$(mktemp -t grr)
 
 	# Script ensures terminal color escape sequences are preserved (something to do with tty: http://stackoverflow.com/questions/1401002/trick-an-application-into-thinking-its-stdin-is-interactive-not-a-pipe)
-	out=$(script -q $file ag -i --nobreak --noheading --color-line-number='1;31' --color-path='0;31' --color-match='1;36' --shortoutput --column --stats-summary --depth=50 --show-progress --ignore '*~' --hidden "$@")
+	out=$(script -q $file ag-old -i --nobreak --noheading --color-line-number='1;31' --color-path='0;31' --color-match='1;36' --shortoutput --column --stats-summary --depth=50 --show-progress --ignore '*~' --ignore '.git' --hidden "$@")
 
-	pipe-grr-to-subl "$file"
+	pipe-grr-to-code "$file"
 }
 
 function s() {
+	open-grr-match "$@"
+}
+
+function c() {
 	open-grr-match "$@"
 }
 
@@ -436,20 +384,12 @@ newwin() {
 }
 
 
-work() {
-	local dir=$(basename `pwd`)
-
-	if [ $dir == 'econhtml5' ]; then
-		subl --project /Users/george/Documents/Projects/Economist.sublime-project
-	else
-		subl -n .
-	fi
-
-	newtab -G sync
+man() {
+	open dash://man:$1
 }
 
-man() {
-	open dash://manpages:$1
+lastmod() {
+	php -r "\$m = @filemtime('$1'); if (\$m) {\$d = @date('r', \$m); echo \"\$m\n\$d\"; }"
 }
 
 status() {
@@ -461,4 +401,32 @@ status() {
 		} else {
 			console.log(codes);
 		}";
+}
+
+version() {
+	git branch -r --contains $1 | sed -e s/.*origin\\/// | grep -E '^(master|v\d+)$' | uniq
+}
+
+
+# Enable nodengine autoswitching
+cd () { builtin cd "$@" && changeNodeEngine; }
+pushd () { builtin pushd "$@" && changeNodeEngine; }
+popd () { builtin popd "$@" && changeNodeEngine; }
+changeNodeEngine () {
+  FILE=$PWD/package.json
+
+  if [ -f $FILE ];
+  then
+     nodengine
+  fi
+}
+
+kube_prompt()
+{
+   kubectl_current_context=$(kubectl config current-context)
+   # kubectl_project=$(echo $kubectl_current_context | cut -d '_' -f 2)
+   kubectl_cluster=$(echo $kubectl_current_context | cut -d '_' -f 4)
+   # kubectl_prompt="k8s:($kubectl_project|$kubectl_cluster)"
+   kubectl_prompt="k8s:$kubectl_cluster"
+   echo $kubectl_prompt
 }

@@ -1,0 +1,9 @@
+#!/usr/bin/env php
+<?php
+
+if (empty($_SERVER['argv'][1])) die('Usage: parse-stash-url [URL]');
+
+$url = $_SERVER['argv'][1];
+if (!preg_match('~.*\:7999/([^/]+)/([^/]+)\.git~', $url, $matches)) die('Invalid URL: ' . $url);
+
+echo sprintf('http://git.svc.ft.com:8080/projects/%s/repos/%s', strtoupper($matches[1]), $matches[2]);

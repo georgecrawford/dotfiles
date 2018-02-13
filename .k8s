@@ -1,0 +1,11 @@
+alias kubectl-ci="kubectl --context=gke_just3things-177010_europe-west2-b_just3things-ci"
+alias kubectl-prod="kubectl --context=gke_just3things-177010_europe-west2-b_just3things-prod"
+alias kubectl-minikube="kubectl --context=minikube"
+
+alias helm-ci="helm --kube-context=gke_just3things-177010_europe-west2-b_just3things-ci"
+alias helm-prod="helm --kube-context=gke_just3things-177010_europe-west2-b_just3things-prod"
+alias helm-minikube="helm --kube-context=minikube"
+
+alias stern-ci="stern --context=gke_just3things-177010_europe-west2-b_just3things-ci"
+alias stern-prod="stern --context=gke_just3things-177010_europe-west2-b_just3things-prod"
+alias stern-minikube="stern --context=minikube"

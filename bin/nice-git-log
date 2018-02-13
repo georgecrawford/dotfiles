@@ -1,0 +1,23 @@
+#!/usr/bin/env php
+<?php
+
+exec('git remote -v', $output);
+$remote = join("\n", $output);
+if (!preg_match('/^origin.*?push.*$/m', $remote, $matches)) {
+	exit;
+}
+
+$pushOriginRemote = $matches[0];
+
+// Try GitHub
+$remote = preg_replace('/.*git@github.com:(.*?)\/(.*?)\.git.*/', 'https://github.com/\1/\2/commit/', $pushOriginRemote);
+
+
+exec('git log -n20 --name-status --abbrev-commit', $lines);
+foreach ($lines as $line) {
+	echo preg_replace_callback('/commit ([0-9a-f]{7})\b/', function($matches) {
+		global $remote;
+		exec('git branch -r --contains ' . $matches[1], $containingBranches);
+		return empty($containingBranches) ? "commit ${matches[1]} \033[1;32m(not pushed)\033[0m" : "commit ${matches[1]} \033[1;32m$remote{$matches[1]}\033[0m";;
+	}, $line) . "\n";
+};

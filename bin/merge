@@ -6,9 +6,9 @@
 # It will stop you if you are behind & need to pull 1st
 #
 
-remote="origin"
+current_branch=$(git branch 2>/dev/null|grep -e ^* | tr -d \*\ //)
+remote=$(git rev-parse --abbrev-ref "$current_branch"@{upstream})
 branch=$1
-current_branch=$(git branch 2>/dev/null|grep -e ^* | tr -d \*//)
 
 if [ -z $branch ]; then
   echo "Usage: $0 [branchname]"
@@ -17,12 +17,14 @@ fi
 
 # If there is a remote version of this branch, rebase onto current_branch first
 # If there's a remote (public) branch, we do not want to be rewriting histories
-tracking=$(git branch -vv | egrep "^\*" | awk '{ print $4 '})
+tracking=$(git branch -vv | egrep "^\*.*\[.*\]" | awk '{ print $4 '})
 echo "tracking=$tracking"
+echo "remote=$remote"
 if [[ ! "$tracking" =~ "$remote" ]]; then
-  echo "* Local-only branch, rebasing $branch onto $current_branch first..."
-  git checkout $branch
-  git rebase $current_branch || exit 1
+  echo "* Local-only branch, push it first."
+  exit 1
+  # git checkout $branch
+  # git rebase $current_branch || exit 1
 else
   echo "* This branch exists remotely, not rebasing"
 fi

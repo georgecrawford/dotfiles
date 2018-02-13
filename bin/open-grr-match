@@ -1,18 +1,39 @@
 #!/usr/bin/env php
 <?php
 
+function loadMatches($matches, $start, $end) {
+	global $dir;
+
+	$cmd = 'code';
+	foreach (range($start, $end) as $key) {
+
+		if (empty($matches[$key])) {
+			die('Could not find key [' . $key . ']');
+		}
+
+		$match = $matches[$key];
+		$cmd .= " -g $dir$match[0]:$match[1]:$match[2]";
+	}
+	`$cmd`;
+}
+
 $file = '~/.grr_matches';
 $cmd = "eval dir='" . $file . "'; echo \$dir";
 $file = trim(`$cmd`);
 
-$matches = json_decode(file_get_contents($file));
+$grrMatches = json_decode(file_get_contents($file), true);
+if (empty($grrMatches)) die('No previous grr matches to load');
+
+$dir = $grrMatches['cwd'];
+unset($grrMatches['cwd']);
+
 $key = @$_SERVER['argv'][1];
-
-if (empty($key) or empty($matches->$key)) {
-	die('Could not find key [' . $key . ']');
+if (empty($key)) {
+	loadMatches($grrMatches, 1, count($grrMatches));
+} else {
+	if (preg_match('/(\d+)-(\d+)/', $key, $matches)) {
+		loadMatches($grrMatches, $matches[1], $matches[2]);
+	} else {
+		loadMatches($grrMatches, $key, $key);
+	}
 }
-
-$match = $matches->$key;
-$dir = $matches->cwd;
-
-`subl $dir$match[0]:$match[1]:$match[2]`;

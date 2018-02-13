@@ -1,8 +1,0 @@
-#!/usr/bin/env php
-<?php
-
-$lastWakeFile  = dirname(__FILE__) . '/../../.timesheet-idle-end';
-
-date_default_timezone_set('Europe/London');
-
-file_put_contents($lastWakeFile, time());

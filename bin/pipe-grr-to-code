@@ -1,0 +1,121 @@
+#!/usr/bin/env php
+<?php
+
+class parser {
+
+	private $_counter = 1;
+	private $_lineCount;
+	private $_padLength = 5;
+
+	private $_string;
+
+	private $_openEscape = '<<';
+	private $_closeEscape = '>>';
+
+	private $_escapeChars = array(
+		"\r"         => 'carriage-return',
+		"\n"         => 'newline',
+		"\033[K"     => 'clear',
+		"\033[0m"    => 'reset',
+		"\033[1;31m" => 'light-red',
+		"\033[1;36m" => 'light-cyan',
+		"\033[1;34m" => 'light-blue',
+		"\033[0;31m" => 'red',
+		"\033[0;34m" => 'blue'
+	);
+	private $_escapeCharsReversed = array();
+	private $_escapeRed = "\033[0;31m";
+	private $_escapeCounter = "\033[0;32m";
+
+	private $_logFilePath = '~/.grr_matches';
+
+	private $_logData = array();
+
+	public function __construct($string) {
+		$this->_string = $string;
+
+		foreach ($this->_escapeChars as $escape => $plain) {
+			$this->_escapeCharsReversed[$this->_openEscape . $plain . $this->_closeEscape] = $escape;
+		}
+
+		$cmd = "eval dir='" . $this->_logFilePath . "'; echo \$dir";
+		$this->_logFilePath = trim(`$cmd`);
+
+		$this->_logData['cwd'] = getcwd() . '/';
+	}
+
+	public function parse() {
+		$this->_escapeControlSequences();
+		$this->_countLines();
+		$this->_parseMatches();
+		$this->_restoreControlSequences();
+		$this->_writeLogData();
+		$this->_writeInstructions();
+
+		return $this->_string;
+	}
+
+	private function _($string) {
+		return $this->_openEscape . $string . $this->_closeEscape;
+	}
+
+	private function _escapeControlSequences() {
+		$this->_string = preg_replace_callback('/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]/', array($this, '_escapeControlSequence'), $this->_string);
+		$this->_string = preg_replace_callback('/\r/', array($this, '_escapeControlSequence'), $this->_string);
+		$this->_string = preg_replace_callback('/\n/', array($this, '_escapeControlSequence'), $this->_string);
+	}
+
+	private function _countLines() {
+		$pattern = sprintf('/A total of %s(\d+)%s lines with matches found/', $this->_('light-red'), $this->_('light-blue'));
+		if (preg_match($pattern, $this->_string, $matches)) {
+			$this->_lineCount = (int) $matches[1];
+			$this->_padLength = strlen((string) $this->_lineCount) + 1;
+		}
+	}
+
+	private function _parseMatches() {
+		$pattern = sprintf('/(%s)?(%s)(.*?)(%s%s:%s)(\d+)(%s%s)(?:(?:\:(\d+))|(-))/', $this->_('clear'), $this->_('red'), $this->_('reset'), $this->_('clear'), $this->_('light-red'), $this->_('reset'), $this->_('clear'));
+		$this->_string = preg_replace_callback($pattern, array($this, '_storeLineData'), $this->_string);
+	}
+
+	private function _storeLineData($matches) {
+		$file   = sprintf("'%s'", $matches[3]);
+		$line   = $matches[5];
+		$column = $matches[7];
+
+		if (is_numeric($column)) {
+
+			$this->_logData[$this->_counter] = array($file, $line, $column);
+
+			return $matches[1] . $this->_escapeCounter . str_pad($this->_counter++, $this->_padLength) . $this->_escapeRed . $matches[3] . $matches[4] . $matches[5] . $matches[6] . ':' . $matches[7];
+
+		} else {
+			return $matches[0];
+		}
+
+	}
+
+	private function _restoreControlSequences() {
+		$this->_string = str_replace(array_keys($this->_escapeCharsReversed), array_values($this->_escapeCharsReversed), $this->_string);
+	}
+
+	private function _escapeControlSequence($matches) {
+		if (isset($this->_escapeChars[$matches[0]])) return $this->_openEscape . $this->_escapeChars[$matches[0]] . $this->_closeEscape;
+	}
+
+	private function _writeLogData() {
+		if ($this->_logData) file_put_contents($this->_logFilePath, json_encode($this->_logData));
+	}
+
+	private function _writeInstructions() {
+		if ($this->_lineCount) $this->_string .= "\n\033[0;32m # Run eg. \033[0;45m c 123 \033[0m\033[0;32m to open a match in Visual Studio Code\033[0m\n";
+	}
+
+}
+
+$parser = new parser(file_get_contents($_SERVER['argv'][1]));
+echo $parser->parse();
+
+
+
+

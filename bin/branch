@@ -16,9 +16,24 @@ branch=$1
 if [ -z $branch ]; then
   echo -e "\nSwitch to or create a new branch:"
   echo -e "  $(basename $0) [name]"
-  echo -e "\nCurrent branches: "
-  branches="git branch -a -vv"
+  echo -e "\n\033[1;32mCurrent branches:\033[0m "
+  branches="git branch -r -v"
   $branches
+  echo -e "\n\033[1;31mCurrent local branches:\033[0m\n"
+  php -r "$(cat <<'PHP'
+    exec('git branch --no-color -vv', $branches);
+    foreach ($branches as $branch) {
+      $branch = preg_replace('/^([\s*]*)([^\s]+)/', "\033[1;33m$1$2\033[0m", $branch);
+      if (preg_match('/redmine(\d+)/', $branch, $matches)) {
+        $redmineUrl = sprintf("https://redmine.labs.ft.com/issues/%s", $matches[1]);
+        echo sprintf("%s \n \033[1;32m%s\033[0m\n\n", $branch, $redmineUrl);
+      } else {
+        echo $branch . "\n\n";
+      }
+    };
+PHP
+  )"
+
   echo
   exit 0
 fi

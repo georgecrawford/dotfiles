@@ -1,4 +1,6 @@
-alias dotfiles="cd ~/dotfiles"
+source ~/Projects/dotfiles/bin/git-completion.sh
+
+alias dotfiles="cd ~/Projects/dotfiles"
 
 # Easier navigation: .., ..., ~ and -
 alias ..="cd .."
@@ -26,10 +28,9 @@ alias photoshop="open -a '/Applications/Adobe Photoshop CS6/Adobe Photoshop.app'
 # alias gpr="~/code/gpr $1"
 
 # Node.js with --harmony flag
-alias node="node --harmony"
+# alias node="node --harmony"
 
 # general shortcuts
-alias sites="cd ~/Sites"
 alias gh="open -a google\ chrome 'http://github.com/georgecrawford'"
 
 # Detect which `ls` flavor is in use
@@ -40,13 +41,13 @@ else # OS X `ls`
 fi
 
 # List all files colorized in long format
-alias l="ls -l ${colorflag}"
+alias l="ls -lhFG ${colorflag}"
 
 # List all files colorized in long format, including dot files
-alias la="ls -la ${colorflag}"
+alias la="ls -lhFGa ${colorflag}"
 
 # List only directories
-alias lsd="ls -l ${colorflag} | grep ^d'"
+alias lsd="ls -lhFG ${colorflag} | grep '^d'"
 
 # Always use color output for `ls`
 if [[ "$OSTYPE" =~ ^darwin ]]; then
@@ -70,7 +71,7 @@ alias undopush="git push -f origin HEAD^:master"
 alias gr='[ ! -z `git rev-parse --show-cdup` ] && cd `git rev-parse --show-cdup || pwd`'
 
 # IP addresses
-alias ippublic="dig +short myip.opendns.com @resolver1.opendns.com"
+alias ippublic="curl -s http://whatismijnip.nl |cut -d ' ' -f 5"
 alias iplocal="ipconfig getifaddr en1"
 alias ips="ifconfig -a | perl -nle'/(\d+\.\d+\.\d+\.\d+)/ && print $1'"
 
@@ -100,13 +101,14 @@ alias httpdump="sudo tcpdump -i en1 -n -s 0 -w - | grep -a -o -E \"Host\: .*|GET
 type -t md5sum > /dev/null || alias md5sum="md5"
 
 # Trim new lines and copy to clipboard
-alias c="tr -d '\n' | pbcopy"
+# alias c="tr -d '\n' | pbcopy"
 
 # Recursively delete `.DS_Store` files
 alias cleanup="find . -name '*.DS_Store' -type f -ls -delete"
 
 # Shortcuts
 alias g="git"
+__git_complete g __git_main
 # alias v="vim"
 
 # File size
@@ -137,3 +139,7 @@ alias showdesktop="defaults write com.apple.finder CreateDesktop -bool true && k
 # alias stfu="osascript -e 'set volume output muted true'"
 # alias pumpitup="osascript -e 'set volume 10'"
 # alias hax="growlnotify -a 'Activity Monitor' 'System error' -m 'WTF R U DOIN'"
+
+# alias heroku-login="HEROKU_ORGANIZATION=financial-times heroku login --sso"
+
+alias strip-colors='gsed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g"'

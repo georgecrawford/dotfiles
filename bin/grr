@@ -187,7 +187,7 @@ class Handler {
 	}
 
 	private function _writeInstructions() {
-		if ($this->_lineCount) $this->_string .= "\n\033[0;32m # Run eg. \033[0;45m s 123 \033[0m\033[0;32m to open a match in Sublime Text\033[0m\n";
+		if ($this->_lineCount) $this->_string .= "\n\033[0;32m # Run eg. \033[0;45m s 123 \033[0m\033[0;32m to open a match in Visual Studio Code\033[0m\n";
 	}
 
 	private function _storeLineData($matches) {

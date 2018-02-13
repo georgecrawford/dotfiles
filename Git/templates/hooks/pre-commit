@@ -1,0 +1,5 @@
+#!/bin/sh
+# @autolint
+
+CHANGED=`git diff --staged --name-only`
+lint-files -p"$CHANGED"

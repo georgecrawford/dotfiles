@@ -1,5 +1,5 @@
-# Make nano the default editor
-export EDITOR="nano"
+export EDITOR='code -w'
+export VISUAL='code -w'
 
 # export MANPAGER="cat"
 
@@ -9,13 +9,16 @@ export HISTFILESIZE=$HISTSIZE
 export HISTCONTROL=ignoredups
 
 # Make some commands not show up in history
-export HISTIGNORE="&:[ ]*:pwd;exit:date:* --help"
-
-# JsTestDriver preffix
-export JSTESTDRIVER_HOME=~/bin/java
+export HISTIGNORE="&:[ ]*:pwd:s *:exit:date"
 
 # Python path
-export PYTHONPATH=/usr/local/lib/python2.6/site-packages/
+export PYTHONPATH=/usr/local/lib/python2.7/site-packages/
 
 # This changes the blue for directories to cyan:
 export LSCOLORS=gxfxcxdxbxegedabagacad
+
+# Correctly set the JAVA_HOME var for Maven to work
+# export JAVA_HOME=$(/usr/libexec/java_home)
+
+# GO
+export GOPATH=$HOME/projects/Go

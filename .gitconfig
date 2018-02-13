@@ -1,11 +1,10 @@
 [user]
 	name = George Crawford
-	email = george.crawford@ft.com
-	# email = g.o.crawford@gmail.com
+	email = g.o.crawford@gmail.com
 [core]
-	editor = "subl -n -w"
+	editor = "code -n -w"
 	# pager = cat
-	excludesfile = ~/.gitignore
+	excludesfile = /Users/george/.gitignore_global
 	attributesfile = ~/.gitattributes
 	whitespace = fix,space-before-tab,blank-at-eol,tabwidth=4
 	trustctime = false
@@ -16,10 +15,12 @@
 	c = commit -m
 	ca = commit -am
 	co = checkout
+	cp = cherry-pick
 
 	# Show the diff between the latest commit and the current state
-	d = !"git diff-index --quiet HEAD -- || clear; git diff --patch-with-stat"
-	ds = !"clear; git diff --color-words --staged --patch-with-stat"
+	d = !"git diff-index --quiet HEAD -- || clear; git diff --patch-with-stat --ignore-space-change -w"
+	dw = !"git diff-index --quiet HEAD -- || clear; git diff --color-words --patch-with-stat --ignore-space-change -w"
+	ds = !"clear; git diff --staged --patch-with-stat --ignore-space-change -w"
 
 	# `git di $number` shows the diff between the state `$number` revisions ago and the current state
 	di = !"d() { git diff --patch-with-stat HEAD~$1; }; git diff-index --quiet HEAD -- || clear; d"
@@ -33,8 +34,10 @@
 
 	p = push
 
+	pr = !"sh -c 'stash pull-request $0'"
+
 	# View the current working tree status using the short format
-	s = status -s
+	s = status -sb
 
 	up = pull
 
@@ -55,7 +58,8 @@
 	# Find commits by commit message
 	fm = "!f() { git log --pretty=format:'%C(yellow)%h  %Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short --grep=$1; }; f"
 
-
+	# Open conflicted files in Code
+	fix = !"git diff --name-only | uniq | xargs code"
 [push]
 	default = tracking
 [color]
@@ -74,25 +78,39 @@
 	added = yellow
 	changed = green
 	untracked = cyan
-[diff]
-	tool = "bbdiff"
-	renames = copies
-[difftool]
-	tool = "bbdiff"
-	prompt = NO
-[difftool "bbdiff"]
-	cmd = bbdiff --wait --resume --ignore-trailing-spaces "$LOCAL" "$REMOTE"
-[merge]
-	tool = diffmerge
-	log = true
-	stat = true
+
 [mergetool]
-	prompt = no
-	keepBackup = false
-[mergetool "diffmerge"]
-	cmd = diffmerge --merge --result=$MERGED $LOCAL $BASE $REMOTE
-	trustExitCode = false
+    keepBackup = false
+[diff]
+    renames = copy
+    mnemonicprefix = true
+    tool = code-difftool
+[merge]
+    tool = code-difftool
+    stat = true
+[mergetool]
+    keepBackup = false
+    prompt = false
 [init]
-	templatedir = ~/ftlabs/Git/templates/
+	templatedir = ~/Projects/dotfiles/Git/templates/
 [apply]
 	whitespace = fix
+[mergetool "sourcetree"]
+	cmd = /Applications/DiffMerge.app/Contents/MacOS/DiffMerge --merge --result=\"$MERGED\" \"$LOCAL\" \"$BASE\" \"$REMOTE\"
+	trustExitCode = true
+[help]
+	autocorrect = 1
+[credential]
+	helper = osxkeychain
+[rerere]
+	enabled = true
+	autoupdate = true
+[difftool "sourcetree"]
+	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
+	path =
+[url "https://"]
+	insteadOf = git://
+[fetch]
+	prune = true
+[difftool "code-difftool"]
+    cmd = code --wait --diff $LOCAL $REMOTE

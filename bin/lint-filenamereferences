@@ -1,0 +1,17 @@
+#!/usr/bin/env php
+<?php
+
+$file = '~/.lint-filenamereferences';
+$path = trim(`f=$file; eval f=\$f; echo \$f`);
+$existing = is_readable($path) ? json_decode(file_get_contents($path), true) : '';
+
+switch ($_SERVER['argv'][1]) {
+	case 'reset':
+		file_put_contents($path, '');
+		break;
+
+	case 'add':
+		$existing[$_SERVER['argv'][2]] = $_SERVER['argv'][3];
+		file_put_contents($path, json_encode($existing));
+		break;
+}

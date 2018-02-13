@@ -1,0 +1,18 @@
+{
+	"eqeqeq": true,
+	"forin": true,
+	"immed": true,
+	"newcap": true,
+	"noarg": true,
+	"noempty": true,
+	"undef": true,
+	"strict": true,
+	"trailing": true,
+	"evil": true,
+	"smarttabs": true,
+	"browser": true,
+	"devel": true,
+	"laxbreak": true,
+	"node": true,
+	"esnext": true
+}

@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Colors
+color_error="$(tput sgr 0 1)$(tput setaf 1)"
+color_success="$(tput setaf 10)"
+color_reset="$(tput sgr0)"
+
+branch=$(git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/') || exit $?
+default_remote="origin"
+remote=$(git config "branch.${branch}.remote" || echo "$default_remote")
+
+
+echo "Removing any branches no longer on the remote origin"
+remove_pruned=$(git remote update $remote --prune 2> /dev/null)
+echo "Pruned remote branches: $remove_pruned"
+
+pruned=$(git branch -vv | grep -v '^\s*master\b' | grep -v '^*' | grep ': gone]' | awk '{print $1}' | xargs git branch -d)
+
+echo
+if [[ "$pruned" =~ ^[[:blank:]]*$ ]];then
+	echo -e "${color_success}No orphaned/merged local branches to prune${color_reset}"
+else
+	echo -e "${color_success}Pruning orphaned/merged local branches:${color_reset}"
+	echo -e $pruned | perl -pe 's/Deleted branch (.*?) \(was (.*?)\)\./\n* '$color_success'$1'$color_reset' (#$2)/g';
+fi
+
+echo
+echo -e "${color_success}Remaining local branches:${color_reset}"
+git branch -vv

@@ -1,0 +1,30 @@
+# Ruby
+# export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
+
+# MacPorts Installer addition on 2012-10-17_at_11:52:00: adding an appropriate PATH variable for use with MacPorts.
+# export PATH=/usr/local/bin:/opt/local/bin:/opt/local/sbin:~/bin:$PATH
+
+# Add global and relative NPM dir
+export PATH=${PATH}:/usr/local/lib/node_modules
+export PATH="$PATH:./node_modules/.bin"
+
+# Add Apache Maven bin dir
+# export PATH=${PATH}:/usr/local/apache-maven-3.1.1/bin
+
+# Homebrew
+# export PATH="$(brew --prefix php56)/bin:$PATH"
+
+# Sbin
+export PATH=${PATH}:/usr/local/sbin
+
+# Pear
+# export PATH="$PATH:$HOME/pear/bin"
+
+export PATH=${PATH}:$HOME/bin
+
+# GO
+export PATH=${PATH}:$GOPATH/bin:/usr/local/go/bin
+
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/usr/local/bin/google-cloud-sdk/path.bash.inc' ]; then source '/usr/local/bin/google-cloud-sdk/path.bash.inc'; fi
+

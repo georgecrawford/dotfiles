@@ -1,12 +1,14 @@
 # Load ~/.extra, ~/.bash_prompt, ~/.exports, ~/.aliases and ~/.functions
 # ~/.extra can be used for settings you don’t want to commit
-for file in ~/.{extra,bash_prompt,exports,aliases,functions,ftlabs}; do
+for file in ~/.{bash_prompt,exports,aliases,functions,path,k8s}; do
 	[ -r "$file" ] && source "$file"
 done
 unset file
 
+
+
 # init z   https://github.com/rupa/z
-. ~/code/z/z.sh
+. ~/Projects/dotfiles/code/z/z.sh
 
 # init rvm
 #source ~/.rvm/scripts/rvm
@@ -22,9 +24,6 @@ unset file
 # Add tab completion for SSH hostnames based on ~/.ssh/config, ignoring wildcards
 [ -e "$HOME/.ssh/config" ] && complete -o "default" -o "nospace" -W "$(grep "^Host" ~/.ssh/config | grep -v "[?*]" | cut -d " " -f2)" scp sftp ssh
 
-# Ensure all SSH keys are added
-ssh-add ~/.ssh/id_rsa >/dev/null 2>&1
-
 
 # Add tab completion for `defaults read|write NSGlobalDomain`
 # You could just use `-g` instead, but I like being explicit
@@ -32,4 +31,19 @@ complete -W "NSGlobalDomain" defaults
 
 
 # Initialize rbenv
-if which rbenv > /dev/null; then eval "$(rbenv init -)"; fi
+# if which rbenv > /dev/null; then eval "$(rbenv init -)"; fi
+
+# [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
+
+# Add oh-my-git
+source ~/Projects/Other/oh-my-git/prompt.sh
+
+# The next line enables shell command completion for gcloud.
+if [ -f '/usr/local/bin/google-cloud-sdk/completion.bash.inc' ]; then source '/usr/local/bin/google-cloud-sdk/completion.bash.inc'; fi
+
+# Not currently working: https://github.com/kubernetes/minikube/issues/844
+# source $(brew --prefix)/etc/bash_completion
+source <(kubectl completion bash)
+
+# Brew rbenv
+eval "$(rbenv init -)"
