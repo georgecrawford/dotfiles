@@ -5,6 +5,17 @@ color_error="$(tput sgr 0 1)$(tput setaf 1)"
 color_success="$(tput setaf 10)"
 color_reset="$(tput sgr0)"
 
+# args
+for i in "$@"
+do
+case $i in
+    -f|--force)
+    FORCE=1
+    shift
+    ;;
+esac
+done
+
 branch=$(git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/') || exit $?
 default_remote="origin"
 remote=$(git config "branch.${branch}.remote" || echo "$default_remote")
@@ -14,7 +25,13 @@ echo "Removing any branches no longer on the remote origin"
 remove_pruned=$(git remote update $remote --prune 2> /dev/null)
 echo "Pruned remote branches: $remove_pruned"
 
-pruned=$(git branch -vv | grep -v '^\s*master\b' | grep -v '^*' | grep ': gone]' | awk '{print $1}' | xargs git branch -d)
+if [ $FORCE ]; then
+	# `git branch -D` to forcibly remove 'gone' branches
+	pruned=$(git branch -vv | grep -v '^\s*master\b' | grep -v '^*' | grep ': gone]' | awk '{print $1}' | xargs git branch -D)
+else
+	pruned=$(git branch -vv | grep -v '^\s*master\b' | grep -v '^*' | grep ': gone]' | awk '{print $1}' | xargs git branch -d)
+fi
+
 
 echo
 if [[ "$pruned" =~ ^[[:blank:]]*$ ]];then
