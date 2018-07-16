@@ -41,6 +41,4 @@ else
 	echo -e $pruned | perl -pe 's/Deleted branch (.*?) \(was (.*?)\)\./\n* '$color_success'$1'$color_reset' (#$2)/g';
 fi
 
-echo
-echo -e "${color_success}Remaining local branches:${color_reset}"
-git branch -vv
+branch-list
