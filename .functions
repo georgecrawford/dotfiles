@@ -430,3 +430,11 @@ kube_prompt()
    kubectl_prompt="k8s:$kubectl_cluster"
    echo $kubectl_prompt
 }
+
+# Just3things
+dc()
+{
+	cd ~/Projects/OVO/just3things/local-dev
+	docker-compose -f docker-compose/docker-compose.yml "$@"
+	cd -
+}
