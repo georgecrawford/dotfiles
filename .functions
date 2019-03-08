@@ -408,18 +408,18 @@ version() {
 }
 
 
-# Enable nodengine autoswitching
-cd () { builtin cd "$@" && changeNodeEngine; }
-pushd () { builtin pushd "$@" && changeNodeEngine; }
-popd () { builtin popd "$@" && changeNodeEngine; }
-changeNodeEngine () {
-  FILE=$PWD/package.json
+# # Enable nodengine autoswitching
+# cd () { builtin cd "$@" && changeNodeEngine; }
+# pushd () { builtin pushd "$@" && changeNodeEngine; }
+# popd () { builtin popd "$@" && changeNodeEngine; }
+# changeNodeEngine () {
+#   FILE=$PWD/package.json
 
-  if [ -f $FILE ];
-  then
-     nodengine
-  fi
-}
+#   if [ -f $FILE ];
+#   then
+#      nodengine
+#   fi
+# }
 
 kube_prompt()
 {
@@ -429,12 +429,4 @@ kube_prompt()
    # kubectl_prompt="k8s:($kubectl_project|$kubectl_cluster)"
    kubectl_prompt="k8s:$kubectl_cluster"
    echo $kubectl_prompt
-}
-
-# Just3things
-dc()
-{
-	cd ~/Projects/OVO/just3things/local-dev
-	docker-compose -f docker-compose/docker-compose.yml "$@"
-	cd -
 }

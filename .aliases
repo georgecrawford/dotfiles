@@ -143,3 +143,5 @@ alias showdesktop="defaults write com.apple.finder CreateDesktop -bool true && k
 # alias heroku-login="HEROKU_ORGANIZATION=financial-times heroku login --sso"
 
 alias strip-colors='gsed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g"'
+
+alias gs="g s"

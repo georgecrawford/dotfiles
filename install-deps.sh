@@ -22,14 +22,7 @@ sudo bash < <( curl https://raw.github.com/jamiew/git-friendly/master/install.sh
 
 
 
-# https://github.com/rupa/z
-# z, oh how i love you
-mkdir -p ~/code/z
-curl https://raw.github.com/rupa/z/master/z.sh > ~/code/z/z.sh
-chmod +x ~/code/z/z.sh
 
-# add this to the bash_profile file if it aint there.
-#   . ~/code/z/z.sh
 
 # cd ~/code
 # git clone git://github.com/dronir/SpotifyControl.git
@@ -50,4 +43,3 @@ chmod +x ~/code/z/z.sh
 
 # chrome canary as default
 # on a mac you can set chrome canary as your default inside of Safari preferences :)
-
